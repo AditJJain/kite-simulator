@@ -10,7 +10,6 @@ using namespace std;
 class login
 {
 private:
-    void DrunkGame();
     void DeleteLine(string username);
 
 public:

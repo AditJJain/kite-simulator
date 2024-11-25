@@ -1,9 +1,13 @@
-import requests
+# API Resets at 12:00 AM EST.
+# Maximum 25 queries/day.
+
 import json
+import requests
+import sys
 import time
 
 # Documentation Example Code:
-# api_key = "642YHS2LTSM8E7AH"
+# api_key = "AJ_AlphaVantage.key"
 # url = f'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=IBM&interval=5min&apikey={api_key}'
 # r = requests.get(url)
 # data = r.json()
@@ -63,8 +67,8 @@ class AlphaVantageAPI:
 
 # Main function
 def main():
-    api_key = "642YHS2LTSM8E7AH"  # Replace with your Alpha Vantage API key
-    stock_symbol = "AAPL"    # Replace with your desired stock symbol
+    api_key = "myKey.key"  # Replace with your Alpha Vantage API key
+    stock_symbol = sys.argv[1]    # Replace with your desired stock symbol
 
     api = AlphaVantageAPI(api_key)
 
