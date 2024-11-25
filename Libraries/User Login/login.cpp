@@ -1,250 +1,102 @@
-// Autor : Nemonet TYP
-// Title: A Login and Registration System Programmed in C++
-// PROJECT FOR C/C++ PROGRAMMING TUTORIAL
-
-
 #include <iostream>
-#include <fstream>
-#include <string.h>
-#include <vector>
-#include <functional>
-#include <cmath>
-#include <cstdlib>
-#include <ctime>
-#include "login.h"
-using namespace std;
+#include <string>
+#include <curl/curl.h>
+#include <nlohmann/json.hpp>
+#include <sstream>
+#include <iomanip>
+#include <thread>
+#include <chrono>
 
-void login::Login()
-{
-    string count;
-    string username, password, id, recordPass, recordSecurity;
-    system("clear");
-    cout << "\n\t\t\t Please enter the username and password: " << endl;
-    cout << "\t\t\t USERNAME: ";
-    cin >> username;
-    cout << "\t\t\t PASSWORD: ";
-    cin >> password;
-
-    string loginHash = password;
-    hash<string> mystdhash;
-    int loginHashPassword = mystdhash(loginHash);
-
-    ifstream input("data.txt");
-
-    while (input >> id >> recordPass >> recordSecurity)
-    {
-        if (id == username && stoi(recordPass) == loginHashPassword)
-        {
-            count = "1";
-            system("clear");
-        }
-    }
-    input.close();
-    if (count == "1")
-    {
-        cout << username << "\nLogin successful!\n";
-        string choice = "1";
-        while (choice != "2")
-        {
-            cout << "\t\t\t_____________________________________________\n\n\n";
-            cout << "\t\t\t         Welcome to the NEMO 2023 Login!         \n\n";
-            cout << "\t\t\t_______ Currently Logged In: " << username << " ________\n\n";
-            cout << "\t\t\t_________           Menu           __________\n\n";
-            cout << "\t | Press 1 to VIEW PROFILE                           |" << endl;
-            cout << "\t | Press 2 to LOGOUT                                 |" << endl;
-            cout << "\n\t\t\t Please Enter your choice: ";
-            cin >> choice;
-            cout << endl;
-
-            if (choice == "1")
-            {
-                system("clear");
-                cout << "Profile viewing functionality is not implemented yet." << endl;
-            }
-            else if (choice == "2")
-            {
-                system("clear");
-                cout << "Logging out" << endl;
-            }
-            else
-            {
-                system("clear");
-                cout << "Choice invalid, try again";
-            }
-        }
-    }
-    else
-    {
-        system("clear");
-        cout << "\n Username or password is incorrect, please try again or register\n";
-    }
+// Function to write the response data from the API to a string
+size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
+    ((std::string*)userp)->append((char*)contents, size * nmemb);
+    return size * nmemb;
 }
 
-void login::Registration()
-{
-    string regUser, regPassword, regId, regPass, securityQuestion, regSecure, regCount;
-    system("clear");
-    cout << "\n\t\t\t Enter Username: ";
-    cin >> regUser;
-    cout << "\t\t\t Enter Password: ";
-    cin >> regPassword;
-    cout << "\t\t\t Security Question: What was your favorite childhood movie?: ";
-    cin.ignore();
-    getline(cin, securityQuestion);
+class AlphaVantageAPI {
+public:
+    AlphaVantageAPI(const std::string& api_key)
+        : api_key(api_key), base_url("https://www.alphavantage.co/query") {}
 
-    string hashing = regPassword;
-    hash<string> mystdhash;
-    int hashPassword = mystdhash(hashing);
-
-    string secureHashing = securityQuestion;
-    hash<string> mystdhash2;
-    int securityHash = mystdhash2(secureHashing);
-
-    ifstream input("data.txt");
-    input.seekg(0, ios::end);
-
-    if (input.tellg() == 0)
-    {
-        ofstream f1("data.txt", ios::app);
-        f1 << regUser << ' ' << hashPassword << ' ' << securityHash << endl;
-        system("clear");
-        cout << "\n\t\t\t Registration successful!\n";
-        return;
-    }
-    else
-    {
-        ifstream input("data.txt");
-        while (input >> regId >> regPass >> regSecure)
-        {
-            if (regUser == regId)
-            {
-                string decision;
-                cout << "\n\t\tUsername already taken.\n";
-                cout << "\t\tEnter 1 to enter a new one\n";
-                cout << "\t\tEnter 2 to go back to the menu\n";
-                cout << "\n\t\tEnter choice: ";
-                cin >> decision;
-
-                if (decision == "1")
-                {
-                    Registration();
-                }
-                else if (decision == "2")
-                {
-                    system("clear");
-                    cout << "\tReturning to menu\n";
-                    return;
-                }
-                else
-                {
-                    system("clear");
-                    cout << "\tInvalid Entry, returning to menu." << endl;
-                    return;
-                }
-            }
-            else
-            {
-                regCount = "1";
+    nlohmann::json get_stock_data(const std::string& symbol, const std::string& interval = "1min") {
+        std::string url = base_url + "?function=TIME_SERIES_INTRADAY&symbol=" + symbol +
+                          "&interval=" + interval + "&apikey=" + api_key;
+        std::string response_data = fetch_data(url);
+        if (!response_data.empty()) {
+            try {
+                return nlohmann::json::parse(response_data);
+            } catch (nlohmann::json::parse_error& e) {
+                std::cerr << "Error parsing JSON: " << e.what() << std::endl;
             }
         }
-        if (regCount == "1")
-        {
-            ofstream f1("data.txt", ios::app);
-            f1 << regUser << ' ' << hashPassword << ' ' << securityHash << endl;
-            system("clear");
-            cout << "\n\t\t\t Registration successful!\n";
-            return;
-        }
+        return nlohmann::json();
     }
+
+private:
+    std::string api_key;
+    std::string base_url;
+
+    std::string fetch_data(const std::string& url) {
+        CURL* curl;
+        CURLcode res;
+        curl_global_init(CURL_GLOBAL_DEFAULT);
+        curl = curl_easy_init();
+        if (curl) {
+            std::string response_data;
+            curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_data);
+            res = curl_easy_perform(curl);
+            if (res != CURLE_OK) {
+                std::cerr << "CURL Error: " << curl_easy_strerror(res) << std::endl;
+            }
+            curl_easy_cleanup(curl);
+            curl_global_cleanup();
+            return response_data;
+        }
+        return "";
+    }
+};
+
+void buy_stock(const std::string& symbol, double price) {
+    std::cout << "Buying stock " << symbol << " at price $" << price << std::endl;
 }
 
-void login::ForgotPassword()
-{
-    string forgotChoice, count, secondCount;
-    system("clear");
-    cout << "\n\t\t\tPress 1 to enter USERNAME\n";
-    cout << "\t\t\tPress 2 to go back to MENU\n";
-    cout << "\n\t\t\tEnter choice: ";
-    cin >> forgotChoice;
-
-    if (forgotChoice == "1")
-    {
-        string user, userSecurity, forgotId, forgotPass, forgotSecurity;
-        int newHashPassword, forgotSecHash;
-        system("clear");
-        cout << "\n\t\tEnter USERNAME: ";
-        cin >> user;
-        cout << "\n\t\tAnswer your security question: What was your favorite childhood movie?: ";
-        cin.ignore();
-        getline(cin, userSecurity);
-
-        // Hash the security answer
-        hash<string> mystdhash;
-        forgotSecHash = mystdhash(userSecurity);
-
-        // Read user data from file
-        ifstream input("data.txt");
-        ofstream temp("temp.txt");
-        bool userFound = false;
-
-        while (input >> forgotId >> forgotPass >> forgotSecurity) {
-            if (forgotId == user && stoi(forgotSecurity) == forgotSecHash) {
-                userFound = true;
-                cout << "\t\t\t Enter your new password: ";
-                string newPassword;
-                cin >> newPassword;
-                newHashPassword = mystdhash(newPassword);
-                temp << forgotId << ' ' << newHashPassword << ' ' << forgotSecurity << endl;
-            } else {
-                temp << forgotId << ' ' << forgotPass << ' ' << forgotSecurity << endl;
-            }
-        }
-        input.close();
-        temp.close();
-        remove("data.txt");
-        rename("temp.txt", "data.txt");
-
-        if (userFound) {
-            cout << "\n\t\t\t Password reset successful!\n";
-        } else {
-            cout << "\n\t\t\t Username or security answer is incorrect.\n";
-        }
-    }
+void sell_stock(const std::string& symbol, double price) {
+    std::cout << "Selling stock " << symbol << " at price $" << price << std::endl;
 }
 
-void login::DeleteLine(string userDelete)
-{
-    string line;
-    ifstream myFile;
-    myFile.open("data.txt");
-    ofstream temp;
-    temp.open("temp.txt");
-    while (getline(myFile, line))
-    {
-        if (line.substr(0, userDelete.size()) != userDelete)
-        {
-            temp << line << endl;
+void trade_stock(const std::string& symbol, double buy_threshold, double sell_threshold) {
+    std::string api_key = "YOUR_API_KEY";  // Replace with your Alpha Vantage API key
+    AlphaVantageAPI api(api_key);
+
+    while (true) {
+        auto data = api.get_stock_data(symbol);
+        if (data.contains("Time Series (1min)")) {
+            auto time_series = data["Time Series (1min)"];
+            for (auto& [timestamp, values] : time_series.items()) {
+                double current_price = std::stod(values["4. close"].get<std::string>());
+                std::cout << "Current price of " << symbol << " at " << timestamp << ": $" << current_price << std::endl;
+
+                if (current_price < buy_threshold) {
+                    buy_stock(symbol, current_price);
+                } else if (current_price > sell_threshold) {
+                    sell_stock(symbol, current_price);
+                }
+
+                break;  // Exit after one data point for now
+            }
         }
+        std::this_thread::sleep_for(std::chrono::seconds(60));  // Wait 1 minute to comply with API limits
     }
-    myFile.close();
-    temp.close();
-    remove("data.txt");
-    rename("temp.txt", "data.txt");
 }
 
 int main() {
-    login userLogin;
-    int choice;
-    cout << "1. Login\n2. Register\n3. Forgot Password\nEnter your choice: ";
-    cin >> choice;
-    if (choice == 1) {
-        userLogin.Login();
-    } else if (choice == 2) {
-        userLogin.Registration();
-    } else if (choice == 3) {
-        userLogin.ForgotPassword();
-    } else {
-        cout << "Invalid choice.\n";
-    }
+    std::string symbol = "AAPL";  // Replace with your desired stock symbol
+    double buy_threshold = 150.00;  // Set your buy threshold
+    double sell_threshold = 160.00; // Set your sell threshold
+
+    trade_stock(symbol, buy_threshold, sell_threshold);
+
     return 0;
 }
