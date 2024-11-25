@@ -1,5 +1,3 @@
-// Alpha Vantage API Key: 642YHS2LTSM8E7AH
-
 #include <iostream>
 #include "Libraries/HTTP/httplib.h"
 #include "Libraries/JSON/json.hpp"
@@ -64,7 +62,7 @@ void printStockData(const json& data, const std::string& symbol) {
 }
 
 int main() {
-    std::string apiKey = "642YHS2LTSM8E7AH";  // Replace with your Alpha Vantage API Key
+    std::string apiKey = "AJ_Personal_AlphaVantage.key";  // Replace with your Alpha Vantage API Key
     std::string symbol = "AAPL";          // Example stock symbol (Apple)
 
     AlphaVantageAPI api(apiKey);

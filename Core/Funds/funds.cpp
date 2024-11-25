@@ -70,7 +70,7 @@ void withdrawFunds(double& balance) {
 }
 
 int main() {
-    const string balanceFile = "balance.dat";
+    const string balanceFile = "balance.csv";
     double balance = loadBalance(balanceFile);
 
     int choice = 0;
