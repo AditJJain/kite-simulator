@@ -101,7 +101,7 @@ void saveWatchlist(const string& username, const vector<string>& watchlist) {
 
 // Function to call the Python file to get the CMP for a stock symbol
 double getCurrentMarketPrice(const string& symbol) {
-    string command = "/opt/anaconda3/bin/python ../APIs/api_AlphaVantage2.py " + symbol;
+    string command = "/opt/anaconda3/bin/python ../APIs/api_AlphaVantage_LTP.py " + symbol;
     char buffer[128];
     string result;
 

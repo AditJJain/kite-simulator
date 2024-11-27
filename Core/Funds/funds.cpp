@@ -4,7 +4,6 @@
 #include <iomanip> // For setting precision.
 using namespace std;
 
-// Function to display the current balance
 void displayBalance(double balance) {
     cout << fixed << setprecision(2);
     cout << "Your current balance is: ₹" << balance << endl;
@@ -22,7 +21,6 @@ double loadBalance(const string& filename) {
         // If the file doesn't exist, start with a balance of ₹0.00
         balance = 0.0;
     }
-
     return balance;
 }
 
@@ -37,7 +35,6 @@ void saveBalance(const string& filename, double balance) {
     }
 }
 
-// Function to add funds to the balance
 void addFunds(double& balance) {
     double amount = 0.0;
     cout << "Enter the amount to add: ₹";
@@ -52,7 +49,6 @@ void addFunds(double& balance) {
     }
 }
 
-// Function to withdraw funds from the balance
 void withdrawFunds(double& balance) {
     double amount = 0.0;
     cout << "Enter the amount to withdraw: ₹";

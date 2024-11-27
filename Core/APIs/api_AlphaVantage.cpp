@@ -1,8 +1,8 @@
 #include <iostream>
-#include "Libraries/HTTP/httplib.h"
-#include "Libraries/JSON/json.hpp"
+#include "../../Libraries/HTTP/httplib.h"
+#include "../../Libraries/JSON/json.hpp"
 #include <string>
-#include <openssl/ssl.h> 
+#include <openssl/ssl.h>
 
 using json = nlohmann::json;
 
@@ -62,7 +62,7 @@ void printStockData(const json& data, const std::string& symbol) {
 }
 
 int main() {
-    std::string apiKey = "AJ_Personal_AlphaVantage.key";  // Replace with your Alpha Vantage API Key
+    std::string apiKey = "myKey.key";  // Replace with your Alpha Vantage API Key
     std::string symbol = "AAPL";          // Example stock symbol (Apple)
 
     AlphaVantageAPI api(apiKey);

@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include <curl/curl.h>
-#include <nlohmann/json.hpp>
+#include "../../Libraries/JSON/json.hpp"
 
 using namespace std;
 using json = nlohmann::json;
