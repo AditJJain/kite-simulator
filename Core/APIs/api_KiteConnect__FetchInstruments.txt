@@ -1,0 +1,4 @@
+  curl "https://api.kite.trade/instruments" \
+  -H "X-Kite-Version: 3" \
+  -H "Authorization: token <api_key>:<access_token>" \
+  -o KiteConnect_instruments.csv
