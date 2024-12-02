@@ -1,3 +1,7 @@
+#include "Core/Portfolio/portfolio.h"
+#include "Core/Positions/intraday.h"
+#include "Core/Watchlist/watchlist.h"
+#include "Core/Funds/funds.h"
 #include <iostream>
 using namespace std;
 
@@ -18,7 +22,7 @@ bool promptReturnToMenu() {
     }
 }
 
-int main() {
+void runMainMenu() {
     int choice;
     bool end = false;
 
@@ -54,7 +58,7 @@ int main() {
                 end = !promptReturnToMenu();
                 break;
             case 3:
-                cout << "Viewing Portfolio..." << endl;
+                runPortfolio();
                 end = !promptReturnToMenu();
                 break;
             case 4:
@@ -78,6 +82,4 @@ int main() {
                 break;
         }
     }
-
-    return 0;
 }

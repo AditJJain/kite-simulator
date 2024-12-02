@@ -1,7 +1,7 @@
 import logging
 from kiteconnect import KiteConnect
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARNING)
 
 kite = KiteConnect(api_key = open("../../Keys/KiteConnect.key", "r").read())
 # print(kite.login_url())
@@ -15,6 +15,9 @@ kite = KiteConnect(api_key = open("../../Keys/KiteConnect.key", "r").read())
 data = kite.generate_session(open("../../Keys/KiteConnect_RequestToken.key", "r").read(), api_secret= open("../../Keys/KiteConnect_Secret.key", "r").read())
 kite.set_access_token(data["access_token"])
 print(data["access_token"])
+
+with open("../../Keys/KiteConnect_AccessToken.key", "w") as file:
+    file.write(data["access_token"])
 
 # Place an order
 # try:

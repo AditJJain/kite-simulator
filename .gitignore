@@ -3,4 +3,5 @@
 /Keys
 *.o
 *.out
+/Redundant
 .vscode

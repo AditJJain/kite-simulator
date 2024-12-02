@@ -1,15 +1,17 @@
-import logging
-import sys
-import threading
 from datetime import datetime
+import logging
+import subprocess
+import sys
+import os
+import threading
 from kiteconnect import KiteTicker
 
 # Disable logging to keep output clean
 logging.basicConfig(level=logging.WARNING)
 
 # Read API key and access token from files
-api_key = open("../../Keys/KiteConnect.key", "r").read().strip()
-access_token = open("../../Keys/KiteConnect_AccessToken.key", "r").read().strip()
+api_key = open("Keys/KiteConnect.key", "r").read().strip()
+access_token = open("Keys/KiteConnect_AccessToken.key", "r").read().strip()
 
 # Validate arguments
 if len(sys.argv) < 2:
@@ -17,19 +19,19 @@ if len(sys.argv) < 2:
     sys.exit(1)
 
 # Get stock symbol from command-line arguments
-stock_symbol = sys.argv[1].strip().upper()  # e.g., "GOLD24DECFUT"
+stock_symbol = sys.argv[1].strip().upper()
 
 # Map stock symbol to instrument tokens
-symbol_to_token = {
-    "GOLD24DECFUT": 109175815,
-    "ANGELONE" : 82945,
-}
-
-if stock_symbol not in symbol_to_token:
-    print(f"Error: Symbol '{stock_symbol}' not found in token mapping.")
+try:
+    os.chdir(os.path.dirname(os.path.abspath(__file__))) # Changes the CWD to avoid file not found error
+    result = subprocess.run(
+        ["python3", "instrumentSearch.py", stock_symbol], 
+        capture_output=True, text=True, check=True
+    )
+    instrument_token = int(result.stdout.strip())  # Convert the output to an integer
+except subprocess.CalledProcessError as e:
+    print(f"Error: Unable to fetch token for {stock_symbol}. {e.stderr}")
     sys.exit(1)
-
-instrument_token = symbol_to_token[stock_symbol]
 
 # Initialize KiteTicker
 kws = KiteTicker(api_key, access_token)

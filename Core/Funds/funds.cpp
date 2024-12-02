@@ -65,7 +65,7 @@ void withdrawFunds(double& balance) {
     }
 }
 
-int main() {
+int runFundsManagement() {
     const string balanceFile = "balance.csv";
     double balance = loadBalance(balanceFile);
 

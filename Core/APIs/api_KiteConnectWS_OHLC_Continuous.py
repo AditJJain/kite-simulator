@@ -1,8 +1,10 @@
+from datetime import datetime
 import logging
+import subprocess
 import sys
+import os
 import time
 import threading
-from datetime import datetime
 from kiteconnect import KiteTicker
 
 # Enable logging
@@ -21,15 +23,16 @@ if len(sys.argv) < 2:
 stock_symbol = sys.argv[1].strip().upper()  # e.g., "GOLD24DECFUT"
 
 # Map stock symbol to instrument tokens
-symbol_to_token = {
-    "GOLD24DECFUT": 109175815,
-}
-
-if stock_symbol not in symbol_to_token:
-    print(f"Error: Symbol '{stock_symbol}' not found in token mapping.")
+try:
+    os.chdir(os.path.dirname(os.path.abspath(__file__))) # Changes the CWD to avoid file not found error
+    result = subprocess.run(
+        ["python3", "../APIs/instrumentSearch.py", stock_symbol], 
+        capture_output=True, text=True, check=True
+    )
+    instrument_token = int(result.stdout.strip())  # Convert the output to an integer
+except subprocess.CalledProcessError as e:
+    print(f"Error: Unable to fetch token for {stock_symbol}. {e.stderr}")
     sys.exit(1)
-
-instrument_token = symbol_to_token[stock_symbol]
 
 # Initialise KiteTicker
 kws = KiteTicker(api_key, access_token)
