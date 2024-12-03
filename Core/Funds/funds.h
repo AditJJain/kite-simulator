@@ -9,6 +9,6 @@ double loadBalance(const std::string& filename);
 void saveBalance(const std::string& filename, double balance);
 void addFunds(double& balance);
 void withdrawFunds(double& balance);
-int runFundsManagement();
+int runFundsManagement(const string& username);
 
 #endif // FUNDS_H

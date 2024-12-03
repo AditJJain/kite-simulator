@@ -1,3 +1,5 @@
+#include "Core/APIs/apicall_KiteConnect_OHLC.h"
+#include "Core/Orders/buy-sell.h"
 #include "Core/Portfolio/portfolio.h"
 #include "Core/Positions/intraday.h"
 #include "Core/Watchlist/watchlist.h"
@@ -5,24 +7,7 @@
 #include <iostream>
 using namespace std;
 
-// Function to check if the user wants to return to the main menu
-bool promptReturnToMenu() {
-    char YN;
-    while (true) {  // Loop until a valid input is received
-        cout << "Would you like to go back to the menu? " << endl;
-        cout << "If yes, press Y. If no, press N." << endl;
-        cout << "Choice: ";
-        cin >> YN;
-        YN = toupper(YN);
-
-        if (YN == 'Y') return true;
-        if (YN == 'N') return false;
-
-        cout << "Invalid choice. Please enter 'Y' or 'N'." << endl;
-    }
-}
-
-void runMainMenu() {
+void runMainMenu(const std::string& username) {
     int choice;
     bool end = false;
 
@@ -31,11 +16,11 @@ void runMainMenu() {
         cout << "1 - View Market Data" << endl;
         cout << "2 - Place Order" << endl;
         cout << "3 - View Portfolio" << endl;
-        cout << "4 - Manage Watchlist" << endl;
-        cout << "5 - Add/Withdraw Funds" << endl;
-        cout << "6 - View Trade History" << endl;
-        cout << "7 - Exit" << endl;
-
+        cout << "4 - View Intraday Positions" << endl;
+        cout << "5 - Manage Watchlist" << endl;
+        cout << "6 - Add/Withdraw Funds" << endl;
+        cout << "7 - View Trade History" << endl;
+        cout << "8 - Exit" << endl;
         cout << "Enter your choice: ";
 
         // Check if the input is an integer
@@ -50,30 +35,27 @@ void runMainMenu() {
 
         switch (choice) {
             case 1:
-                cout << "Viewing Market Data..." << endl;
-                end = !promptReturnToMenu();
+                viewMarketData(username);
                 break;
             case 2:
-                cout << "Placing an Order..." << endl;
-                end = !promptReturnToMenu();
+                runBuySell(username);
                 break;
             case 3:
-                runPortfolio();
-                end = !promptReturnToMenu();
+                runPortfolio(username);
                 break;
             case 4:
-                cout << "Managing Watchlist..." << endl;
-                end = !promptReturnToMenu();
+                runPositions(username);
                 break;
             case 5:
-                cout << "Adding/Withdrawing Funds..." << endl;
-                end = !promptReturnToMenu();
+                runWatchlist(username);
                 break;
             case 6:
-                cout << "Viewing Trade History..." << endl;
-                end = !promptReturnToMenu();
+                runFundsManagement(username);
                 break;
             case 7:
+                cout << "Viewing Trade History..." << endl;
+                break;
+            case 8:
                 cout << "Exiting program. Goodbye!" << endl;
                 end = true;
                 break;

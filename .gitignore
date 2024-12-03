@@ -1,3 +1,7 @@
+Core/Funds/*.csv
+Core/UserLogin/*.txt
+Core/Watchlist/*.txt
+*.dat
 .DS_Store
 .dSYM
 /Keys

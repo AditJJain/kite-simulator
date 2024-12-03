@@ -2,6 +2,8 @@
 #include <fstream>
 #include <string>
 #include <iomanip> // For setting precision.
+#include <chrono>
+#include <thread>
 using namespace std;
 
 void displayBalance(double balance) {
@@ -65,37 +67,52 @@ void withdrawFunds(double& balance) {
     }
 }
 
-int runFundsManagement() {
-    const string balanceFile = "balance.csv";
+void runFundsManagement(const string& username) {
+    system("clear");
+
+    string balanceFile = "Core/Funds/" + username + "_balance.csv";
     double balance = loadBalance(balanceFile);
 
-    int choice = 0;
+    char choice;
+    bool exitMenu = false; // Flag to control the loop
+
     do {
+        cout << "User: " << username << endl;
         cout << "\n=== Funds Management ===" << endl;
         cout << "1. View Balance" << endl;
         cout << "2. Add Funds" << endl;
         cout << "3. Withdraw Funds" << endl;
-        cout << "4. Exit to Main Menu" << endl;
-        cout << "Enter your choice (1-4): ";
+        cout << "Q. Exit to Main Menu" << endl;
+        cout << "\nEnter your choice (1-3 or Q): ";
         cin >> choice;
+        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Clear input buffer
 
-        switch (choice) {
-            case 1:
+        switch (toupper(choice)) {
+            case '1':
                 displayBalance(balance);
+                this_thread::sleep_for(chrono::seconds(5));
+                system("clear");
                 break;
-            case 2:
+            case '2':
                 addFunds(balance);
                 saveBalance(balanceFile, balance);
+                this_thread::sleep_for(chrono::seconds(5));
+                system("clear");
                 break;
-            case 3:
+            case '3':
                 withdrawFunds(balance);
                 saveBalance(balanceFile, balance);
+                this_thread::sleep_for(chrono::seconds(5));
+                system("clear");
                 break;
-            case 4:
-                cout << "Returning to Main Menu..." << endl;
+            case 'Q':
+                system("clear");
+                exitMenu = true; // Set the flag to true to exit the loop
                 break;
             default:
-                cout << "Invalid choice. Please enter a number between 1 and 4." << endl;
+                cout << "Invalid choice. Please enter 1, 2, 3, or Q." << endl;
+                this_thread::sleep_for(chrono::seconds(2));
+                system("clear");
         }
-    } while (choice != 4);
+    } while (!exitMenu); // Continue looping until exitMenu is true
 }

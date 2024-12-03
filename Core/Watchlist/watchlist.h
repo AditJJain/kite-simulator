@@ -1,38 +1,27 @@
+// watchlist.h
 #ifndef WATCHLIST_H
 #define WATCHLIST_H
 
-#include <iostream>
-#include <fstream>
 #include <string>
 #include <vector>
-#include <algorithm>    // For find
-#include <cctype>       // For toupper
-#include <iomanip>      // For formatting output
-#include <cstdio>       // For popen()
-#include <memory>       // For managing dynamic allocations
-#include <thread>       // For sleep
-#include <chrono>       // For time
-#include <termios.h>    // For non-blocking input
-#include <unistd.h>     // For read
-#include <sys/select.h> // For select
+#include <utility>
 
-using namespace std;
+void loadWatchlist(const std::string& username, std::vector<std::string>& watchlist);
+void saveWatchlist(const std::string& username, const std::vector<std::string>& watchlist);
+std::pair<double, std::string> getCMP(const std::string& symbol);
+void displayWatchlist(const std::vector<std::string>& watchlist);
+void addStock(std::vector<std::string>& watchlist);
+void removeStock(std::vector<std::string>& watchlist);
 
-// Function declarations
-void watchlistMenu(const string& username);
-void loadWatchlist(const string& username, vector<string>& watchlist);
-void saveWatchlist(const string& username, const vector<string>& watchlist);
-void displayWatchlist(const vector<string>& watchlist);
-void addStockToWatchlist(vector<string>& watchlist);
-void removeStockFromWatchlist(vector<string>& watchlist);
-pair<double, string> getCurrentMarketPrice(const string& symbol);
-string toUpperCase(const string& str);
+// Helper function to convert a string to uppercase
+std::string toUpperCase(const std::string& str);
 
 // Helper functions for non-blocking input
-struct termios orig_termios;
-
 void resetTerminalMode();
 void setTerminalMode();
 bool isKeyPressed(char& c);
+
+void watchlistMenu(const std::string& username);
+void runWatchlist(const std::string& username);
 
 #endif // WATCHLIST_H

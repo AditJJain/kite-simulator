@@ -12,19 +12,17 @@
 #include <termios.h>    // For non-blocking input
 #include <unistd.h>     // For read
 #include <sys/select.h> // For select
-
+#include "Core/APIs/apicall_KiteConnect_LTP.h"
 using namespace std;
 
-// Function declarations
-void watchlistMenu(const string& username);
-void loadWatchlist(const string& username, vector<string>& watchlist);
-void saveWatchlist(const string& username, const vector<string>& watchlist);
-void displayWatchlist(const vector<string>& watchlist);
-void addStockToWatchlist(vector<string>& watchlist);
-void removeStockFromWatchlist(vector<string>& watchlist);
-pair<double, string> getCurrentMarketPrice(const string& symbol);
-string toUpperCase(const string& str);
-bool isKeyPressed(char& c);
+// Helper function to convert a string to uppercase
+string toUpperCase(const string& str) {
+    string result;
+    for (char c : str) {
+        result += toupper(static_cast<unsigned char>(c));
+    }
+    return result;
+}
 
 // Helper functions for non-blocking input
 struct termios orig_termios;
@@ -55,55 +53,9 @@ bool isKeyPressed(char& c) {
     return false;
 }
 
-int main() {
-    // Assume the user has successfully logged in
-    string username = "AJ"; // Replace with actual login function
-
-    watchlistMenu(username);
-}
-
-// Watchlist menu
-void watchlistMenu(const string& username) {
-    vector<string> watchlist;
-    loadWatchlist(username, watchlist);
-
-    int choice = 0;
-    do {
-        cout << "\n=== Watchlist Menu for User: " << username << " ===" << endl;
-        cout << "1. View Watchlist" << endl;
-        cout << "2. Add Stock to Watchlist" << endl;
-        cout << "3. Remove Stock from Watchlist" << endl;
-        cout << "4. Return to Main Menu" << endl;
-        cout << "Enter your choice (1-4): ";
-        cin >> choice;
-
-        // Clear the input buffer to handle any leftover input
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
-
-        switch (choice) {
-            case 1:
-                displayWatchlist(watchlist);
-                break;
-            case 2:
-                addStockToWatchlist(watchlist);
-                saveWatchlist(username, watchlist);
-                break;
-            case 3:
-                removeStockFromWatchlist(watchlist);
-                saveWatchlist(username, watchlist);
-                break;
-            case 4:
-                cout << "Returning to Main Menu..." << endl;
-                break;
-            default:
-                cout << "Invalid choice. Please enter a number between 1 and 4." << endl;
-        }
-    } while (choice != 4);
-}
-
 // Function to load the watchlist from a file
 void loadWatchlist(const string& username, vector<string>& watchlist) {
-    string filename = username + "_watchlist.txt";
+    string filename = "Core/Watchlist/" + username + "_watchlist.txt";
     ifstream infile(filename);
 
     if (infile.is_open()) {
@@ -122,7 +74,7 @@ void loadWatchlist(const string& username, vector<string>& watchlist) {
 
 // Function to save the watchlist to a file
 void saveWatchlist(const string& username, const vector<string>& watchlist) {
-    string filename = username + "_watchlist.txt";
+    string filename = "Core/Watchlist/" + username + "_watchlist.txt";
     ofstream outfile(filename);
 
     if (outfile.is_open()) {
@@ -135,45 +87,6 @@ void saveWatchlist(const string& username, const vector<string>& watchlist) {
     }
 }
 
-// Function to call the Python script to get the CMP and timestamp for a stock symbol
-pair<double, string> getCurrentMarketPrice(const string& symbol) {
-    string command = "/opt/anaconda3/bin/python ../APIs/api_KiteConnectWS_LTP_Once.py " + symbol;
-    char buffer[128];
-    string result;
-
-    // Use popen to execute the Python script and capture output
-    unique_ptr<FILE, decltype(&pclose)> pipe(popen(command.c_str(), "r"), pclose);
-    if (!pipe) {
-        cerr << "Error: Failed to execute market price API." << endl;
-        return {0.0, ""};
-    }
-
-    // Read the output of the Python script
-    while (fgets(buffer, sizeof(buffer), pipe.get()) != nullptr) {
-        result += buffer;
-    }
-
-    // Remove any trailing newline characters
-    result.erase(result.find_last_not_of(" \n\r\t") + 1);
-
-    // Assume the Python script outputs "price,timestamp"
-    string price_str, timestamp;
-    istringstream iss(result);
-    if (getline(iss, price_str, ',') && getline(iss, timestamp)) {
-        try {
-            double price = stod(price_str);
-            return {price, timestamp};
-        } catch (const invalid_argument& e) {
-            cerr << "Error: Invalid price received for " << symbol << ". Output was: " << result << endl;
-            return {0.0, ""};
-        }
-    } else {
-        cerr << "Error: Failed to parse output for " << symbol << ". Output was: " << result << endl;
-        return {0.0, ""};
-    }
-}
-
-// Function to display the watchlist with CMP and a global timestamp dynamically
 void displayWatchlist(const vector<string>& watchlist) {
     if (watchlist.empty()) {
         cout << "Your watchlist is currently empty." << endl;
@@ -187,14 +100,17 @@ void displayWatchlist(const vector<string>& watchlist) {
 
     // Print headers
     cout << "=== Your Watchlist ===" << endl;
-    cout << "Timestamp: " << "N/A" << endl;
+    cout << "Timestamp: " << "N/A" << endl; // Placeholder, will update later
     cout << left << setw(10) << "Symbol"
          << right << setw(15) << "Current Price" << endl;
     cout << "----------------------------" << endl;
 
-    // Print initial data
+    // Initial data display
     for (const auto& symbol : watchlist) {
-        double cmp = getCurrentMarketPrice(symbol).first;
+        auto priceTimestamp = getCurrentMarketPrice(symbol); // Modify this function to return a pair<double, string>
+        double cmp = priceTimestamp.first;
+        string timestamp = priceTimestamp.second;
+
         if (cmp > 0.0) {
             cout << left << setw(10) << symbol
                  << right << setw(15) << fixed << setprecision(2) << cmp << endl;
@@ -204,26 +120,20 @@ void displayWatchlist(const vector<string>& watchlist) {
         }
     }
 
-    cout << "\nPress '4' to return to the Watchlist Menu." << endl;
+    cout << "\nPress 'Q' to return to the Watchlist Menu." << endl;
 
     while (true) {
-        // Fetch current timestamp
-        auto now = chrono::system_clock::now();
-        time_t now_time = chrono::system_clock::to_time_t(now);
-        string timestamp = ctime(&now_time);
-        timestamp.pop_back(); // Remove newline character
-
-        // Move cursor to the second line (Timestamp line)
-        cout << "\033[2;1H"; // Line 2, Column 1
-        cout << "Timestamp: " << setw(20) << timestamp << "   "; // Extra spaces to clear previous text
+        string lastTimestamp;
 
         // Update each stock's current price
         for (size_t i = 0; i < watchlist.size(); ++i) {
-            double cmp = getCurrentMarketPrice(watchlist[i]).first;
+            auto priceTimestamp = getCurrentMarketPrice(watchlist[i]);
+            double cmp = priceTimestamp.first;
+            string timestamp = priceTimestamp.second;
+            lastTimestamp = timestamp; // Update the timestamp
 
             // Move cursor to the specific stock line
-            // Header is lines 1-4, data starts at line 5
-            int line = 4 + i + 1; // e.g., watchlist[0] is line 5
+            int line = 4 + i + 1;
 
             cout << "\033[" << line << ";1H"; // Move cursor to line
 
@@ -236,17 +146,20 @@ void displayWatchlist(const vector<string>& watchlist) {
             }
         }
 
-        // Display exit instruction
-        cout << "\033[" << (4 + watchlist.size() + 2) << ";1H" // Move cursor after the watchlist
-             << "Press '4' to return to the Watchlist Menu." << endl;
+        // Update the timestamp display
+        cout << "\033[2;1H"; // Move cursor to the second line
+        cout << "Timestamp: " << setw(20) << lastTimestamp << "   ";
 
-        // Wait for 5 seconds or until '4' is pressed
+        // Display exit instruction
+        cout << "\033[" << (4 + watchlist.size() + 2) << ";1H"
+             << "Press 'Q' to return to the Watchlist Menu." << endl << flush;
+
+        // Wait for 5 seconds or until 'Q' is pressed
         auto start = chrono::steady_clock::now();
-        bool exit = false;
         while (chrono::steady_clock::now() - start < chrono::seconds(5)) {
             char c;
             if (isKeyPressed(c)) {
-                if (c == '4') {
+                if (tolower(c) == 'q') {
                     cout << "\nReturning to Watchlist Menu..." << endl;
                     resetTerminalMode();
                     return;
@@ -257,8 +170,7 @@ void displayWatchlist(const vector<string>& watchlist) {
     }
 }
 
-// Function to add a stock to the watchlist
-void addStockToWatchlist(vector<string>& watchlist) {
+void addStock(vector<string>& watchlist) {
     string symbol;
     cout << "Enter the stock symbol to add: ";
     getline(cin, symbol);
@@ -278,8 +190,7 @@ void addStockToWatchlist(vector<string>& watchlist) {
     }
 }
 
-// Function to remove a stock from the watchlist
-void removeStockFromWatchlist(vector<string>& watchlist) {
+void removeStock(vector<string>& watchlist) {
     string symbol;
     cout << "Enter the stock symbol to remove: ";
     getline(cin, symbol);
@@ -295,11 +206,47 @@ void removeStockFromWatchlist(vector<string>& watchlist) {
     }
 }
 
-// Helper function to convert a string to uppercase
-string toUpperCase(const string& str) {
-    string result;
-    for (char c : str) {
-        result += toupper(static_cast<unsigned char>(c));
-    }
-    return result;
+// Watchlist menu
+void watchlistMenu(const string& username) {
+    vector<string> watchlist;
+    loadWatchlist(username, watchlist);
+
+    int choice = 0;
+    do {
+        cout << "\033[2J\033[H";
+        cout << "User: " << username << endl;
+        cout << "\n=== Watchlist Menu ===" << endl;
+        cout << "1. View Watchlist" << endl;
+        cout << "2. Add Stock to Watchlist" << endl;
+        cout << "3. Remove Stock from Watchlist" << endl;
+        cout << "4. Return to Main Menu" << endl;
+        cout << "Enter your choice (1-4): ";
+        cin >> choice;
+
+        // Clear the input buffer to handle any leftover input
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+        switch (choice) {
+            case 1:
+                displayWatchlist(watchlist);
+                break;
+            case 2:
+                addStock(watchlist);
+                saveWatchlist(username, watchlist);
+                break;
+            case 3:
+                removeStock(watchlist);
+                saveWatchlist(username, watchlist);
+                break;
+            case 4:
+                system("clear");
+                break;
+            default:
+                cout << "Invalid choice. Please enter a number between 1 and 4." << endl;
+        }
+    } while (choice != 4);
+}
+
+void runWatchlist(const string& username) {
+    watchlistMenu(username);
 }

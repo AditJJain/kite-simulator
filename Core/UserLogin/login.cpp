@@ -1,4 +1,4 @@
-// Autor : Nemonet TYP
+// Author: Nemonet TYP
 // Title: A Login and Registration System Programmed in C++
 // Source: https://github.com/The-Young-Programmer/C-CPP-Programming/blob/main/Projects/C%2B%2B%20Projects/Basic/A%20Login%20and%20Registration%20System/login.cpp
 
@@ -20,7 +20,7 @@ void login::Login() {
     string count;
     string username, password, id, recordPass, recordSecurity;
     system("clear");
-    cout << "\nPlease enter the username and password: " << endl;
+    cout << "Please enter the username and password: " << endl;
     cout << "USERNAME: ";
     cin >> username;
     cout << "PASSWORD: ";
@@ -41,52 +41,23 @@ void login::Login() {
         }
     }
     input.close();
-    if (count == "1")
-    {
-        cout << "User: " << username << "\nLogin successful! Welcome to the kite-simulator!";
-        string choice = "1";
-        while (choice != "3")
-        {
-            cout << "\n\n_________      Menu      __________" << endl;
-            cout << "\n| Press 1 to VIEW PROFILE                      |" << endl;
-            cout << "| Press 2 to VIEW KITE SIMULATOR               |" << endl;
-            cout << "| Press 3 to LOGOUT                            |" << endl;
-            cout << "\nPlease Enter your choice: ";
-            cin >> choice;
-            cout << endl;
-
-            if (choice == "1")
-            {
-                system("clear");
-                cout << "Profile viewing functionality is not implemented yet." << endl;
-            }
-            else if (choice == "2") {
-                system("clear");
-                runMainMenu();
-            }
-            else if (choice == "3")
-            {
-                system("clear");
-                cout << "Successfully Logged Out." << endl;
-            }
-            else
-            {
-                system("clear");
-                cout << "Invalid Choice. Please try again.";
-            }
-        }
-    }
-    else
-    {
+    if (count == "1") {
+        cout << "User: " << username << endl;
+        cout << "Login successful! Welcome to the kite-simulator!";
         system("clear");
-        cout << "\nUsername or password is incorrect, please try again or register\n";
+        runMainMenu(username);
+    }
+    else {
+        system("clear");
+        cout << "Username or password is incorrect. Please try again or register as a new user." << endl;
+        Login(); // Call Login() again after incorrect password
     }
 }
 
 void login::Registration() {
     string regUser, regPassword, regId, regPass, securityQuestion, regSecure, regCount;
     system("clear");
-    cout << "\nEnter Username: ";
+    cout << "Enter Username: ";
     cin >> regUser;
     cout << "Enter Password: ";
     cin >> regPassword;
@@ -105,47 +76,40 @@ void login::Registration() {
     ifstream input(dataFilePath);
     input.seekg(0, ios::end);
 
-    if (input.tellg() == 0)
+    if (input.tellg() == 0) // If file is empty, write the first user
     {
         ofstream f1(dataFilePath, ios::app);
         f1 << regUser << ' ' << hashPassword << ' ' << securityHash << endl;
         system("clear");
-        cout << "\nRegistration successful!\n";
+        cout << "Registration successful!" << endl;
+        Login(); // Call Login() after registration
         return;
     }
-    else
-    {
+    else { // For subsequent users
         ifstream input(dataFilePath);
         while (input >> regId >> regPass >> regSecure)
         {
             if (regUser == regId)
             {
                 string decision;
-                cout << "\nUsername already taken.\n";
-                cout << "Enter 1 to enter a new one\n";
-                cout << "Enter 2 to go back to the menu\n";
-                cout << "\nEnter choice: ";
+                cout << "Username already taken." << endl;
+                cout << "Enter 1 to enter a new username." << endl;
+                cout << "Enter 2 to go back to the menu." << endl;
+                cout << "\nEnter choice: " << endl;
                 cin >> decision;
 
-                if (decision == "1")
-                {
+                if (decision == "1") {
                     Registration();
-                }
-                else if (decision == "2")
-                {
+                } else if (decision == "2") {
                     system("clear");
                     cout << "Returning to menu\n";
                     return;
-                }
-                else
-                {
+                } else {
                     system("clear");
                     cout << "Invalid Entry, returning to menu." << endl;
                     return;
                 }
-            }
-            else
-            {
+            } else {
                 regCount = "1";
             }
         }
@@ -154,7 +118,19 @@ void login::Registration() {
             ofstream f1(dataFilePath, ios::app);
             f1 << regUser << ' ' << hashPassword << ' ' << securityHash << endl;
             system("clear");
-            cout << "\nRegistration successful!\n";
+            ofstream balanceFile("Core/Funds/" + regUser + "_balance.csv");
+            if (balanceFile.is_open()) {
+                balanceFile << "0.00";
+                balanceFile.close();
+            } else {
+                cerr << "Error: Unable to initialize balance file." << endl;
+            }
+            ofstream("Core/Portfolio/" + regUser + "_portfolio.dat").close();
+            ofstream("Core/Positions/" + regUser + "_positions.dat").close();
+            ofstream("Core/Watchlist/" + regUser + "_watchlist.txt").close();
+            cout << "Data files created." << endl;
+            cout << "Registration successful!" << endl;
+            Login(); // Call Login() after registration
             return;
         }
     }
@@ -163,9 +139,9 @@ void login::Registration() {
 void login::ForgotPassword() {
     string forgotChoice, count, secondCount;
     system("clear");
-    cout << "\nPress 1 to enter USERNAME\n";
-    cout << "Press 2 to go back to MENU\n";
-    cout << "\ntEnter choice: ";
+    cout << "Press 1 to enter username." << endl;
+    cout << "Press 2 to go back to menu." << endl;
+    cout << "\nEnter choice: ";
     cin >> forgotChoice;
 
     if (forgotChoice == "1")
@@ -206,9 +182,10 @@ void login::ForgotPassword() {
         rename("temp.txt", dataFilePath.c_str());
 
         if (userFound) {
-            cout << "\nPassword reset successful!\n";
+            cout << "Password reset successful!" << endl;
+            Login(); // Call Login() after password reset
         } else {
-            cout << "\nUsername or security answer is incorrect.\n";
+            cout << "Username or security answer is incorrect." << endl;
         }
     }
 }
@@ -233,6 +210,7 @@ void login::DeleteLine(string userDelete) {
 }
 
 void runUserLogin() {
+    system("clear");
     login userLogin;
     int choice;
     cout << "1. Login\n2. Register\n3. Forgot Password\nEnter your choice: ";
@@ -244,6 +222,6 @@ void runUserLogin() {
     } else if (choice == 3) {
         userLogin.ForgotPassword();
     } else {
-        cout << "Invalid choice.\n";
+        cout << "Invalid choice. Please try again." << endl;
     }
 }

@@ -4,23 +4,14 @@
 #include <string>
 #include <vector>
 #include <utility>
-
+#include "Core/holding.h"
 using namespace std;
-
-struct Holding {
-    string symbol;
-    int quantity;
-    double averagePrice;
-    double unrealizedPL;
-    double currentPrice;
-    string timestamp;
-};
 
 pair<double, string> getCurrentMarketPrice(const string& symbol);
 void loadPortfolio(const string& username, vector<Holding>& portfolio);
 void calculateUnrealizedPL(vector<Holding>& portfolio);
-void displayPortfolio(const vector<Holding>& portfolio);
+void displayPortfolio(const vector<Holding>& portfolio, const string& username);
 void displayAllocation(const vector<Holding>& portfolio);
-void runPortfolio();
+void runPortfolio(const string& username);
 
 #endif // PORTFOLIO_H

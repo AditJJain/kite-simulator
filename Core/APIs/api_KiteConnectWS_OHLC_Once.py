@@ -10,8 +10,8 @@ from kiteconnect import KiteTicker
 logging.basicConfig(level=logging.WARNING)
 
 # Read API key and access token from files
-api_key = open("../../Keys/KiteConnect.key", "r").read().strip()
-access_token = open("../../Keys/KiteConnect_AccessToken.key", "r").read().strip()
+api_key = open("Keys/KiteConnect.key", "r").read().strip()
+access_token = open("Keys/KiteConnect_AccessToken.key", "r").read().strip()
 
 # Validate arguments
 if len(sys.argv) < 2:
@@ -21,18 +21,30 @@ if len(sys.argv) < 2:
 # Get stock symbol from command-line arguments
 stock_symbol = sys.argv[1].strip().upper()  # e.g., "GOLD24DECFUT"
 
+# Change the current working directory
+try:
+    script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+    os.chdir(script_dir)
+except Exception as e:
+    print(f"Error changing directory: {e}")
+    sys.exit(1)
+
 # Map stock symbol to instrument tokens
 try:
     result = subprocess.run(
-        os.chdir(os.path.dirname(os.path.abspath(__file__))) # Changes the CWD to avoid file not found error
-        ["python3", "../APIs/instrumentSearch.py", stock_symbol], 
-        capture_output=True, text=True, check=True
+        ["python3", "../APIs/instrumentSearch.py", stock_symbol],
+        capture_output=True,
+        text=True,
+        check=True
     )
     instrument_token = int(result.stdout.strip())  # Convert the output to an integer
 except subprocess.CalledProcessError as e:
     print(f"Error: Unable to fetch token for {stock_symbol}. {e.stderr}")
     sys.exit(1)
-
+except ValueError:
+    print(f"Error: Received invalid token '{result.stdout.strip()}' for {stock_symbol}.")
+    sys.exit(1)
+    
 # Initialize KiteTicker
 kws = KiteTicker(api_key, access_token)
 
