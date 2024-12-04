@@ -65,11 +65,6 @@ void calculateUnrealizedPL(vector<IntradayPosition>& positions) {
 
 // Function to display intraday positions with unrealized P&L
 void displayIntradayPositions(const vector<IntradayPosition>& positions) {
-    if (positions.empty()) {
-        cout << "No intraday positions to display." << endl;
-        return;
-    }
-
     cout << "\n=== Intraday Positions ===" << endl;
     cout << "Timestamp: " << positions.front().timestamp << endl;
     cout << left << setw(10) << "Symbol"
@@ -101,6 +96,8 @@ void runPositions(const string& username) {
 
     if (positions.empty()) {
         cout << "No intraday positions to display." << endl;
+        this_thread::sleep_for(chrono::seconds(5));
+        system("clear");
         return; // Return to main menu
     }
 
@@ -121,7 +118,7 @@ void runPositions(const string& username) {
                     return; // Exit the function
                 }
             }
-            this_thread::sleep_for(chrono::milliseconds(100));
+            this_thread::sleep_for(chrono::seconds(5));
         }
     }
     setNonBlockingMode(false); // Disable non-blocking mode before exiting

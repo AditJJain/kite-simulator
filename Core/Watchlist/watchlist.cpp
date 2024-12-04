@@ -172,27 +172,30 @@ void displayWatchlist(const vector<string>& watchlist) {
 
 void addStock(vector<string>& watchlist) {
     string symbol;
-    cout << "Enter the stock symbol to add: ";
+    cout << "Enter the instrument symbol to add: ";
     getline(cin, symbol);
 
     symbol = toUpperCase(symbol);
 
     if (symbol.empty()) {
-        cout << "Stock symbol cannot be empty." << endl;
+        cout << "Instrument symbol cannot be empty." << endl;
+        this_thread::sleep_for(std::chrono::seconds(5));
         return;
     }
 
     if (find(watchlist.begin(), watchlist.end(), symbol) != watchlist.end()) {
-        cout << "Stock " << symbol << " is already in your watchlist." << endl;
+        cout << "Instrument " << symbol << " is already in your watchlist." << endl;
+        this_thread::sleep_for(std::chrono::seconds(5));
     } else {
         watchlist.push_back(symbol);
-        cout << "Stock " << symbol << " has been added to your watchlist." << endl;
+        cout << "Instrument " << symbol << " has been added to your watchlist." << endl;
+        this_thread::sleep_for(std::chrono::seconds(5));
     }
 }
 
 void removeStock(vector<string>& watchlist) {
     string symbol;
-    cout << "Enter the stock symbol to remove: ";
+    cout << "Enter the instrument symbol to remove: ";
     getline(cin, symbol);
 
     symbol = toUpperCase(symbol);
@@ -200,53 +203,53 @@ void removeStock(vector<string>& watchlist) {
     auto it = find(watchlist.begin(), watchlist.end(), symbol);
     if (it != watchlist.end()) {
         watchlist.erase(it);
-        cout << "Stock " << symbol << " has been removed from your watchlist." << endl;
+        cout << "Instrument " << symbol << " has been removed from your watchlist." << endl;
+        this_thread::sleep_for(std::chrono::seconds(5));
     } else {
-        cout << "Stock " << symbol << " is not in your watchlist." << endl;
+        cout << "Instrument " << symbol << " is not in your watchlist." << endl;
+        this_thread::sleep_for(std::chrono::seconds(5));
     }
 }
 
 // Watchlist menu
-void watchlistMenu(const string& username) {
+void runWatchlist(const string& username) {
     vector<string> watchlist;
     loadWatchlist(username, watchlist);
 
-    int choice = 0;
+    char choice = 0;
     do {
         cout << "\033[2J\033[H";
         cout << "User: " << username << endl;
         cout << "\n=== Watchlist Menu ===" << endl;
         cout << "1. View Watchlist" << endl;
-        cout << "2. Add Stock to Watchlist" << endl;
-        cout << "3. Remove Stock from Watchlist" << endl;
-        cout << "4. Return to Main Menu" << endl;
-        cout << "Enter your choice (1-4): ";
+        cout << "2. Add Instrument to Watchlist" << endl;
+        cout << "3. Remove Instrument from Watchlist" << endl;
+        cout << "Q. Return to Main Menu" << endl;
+        cout << "\nEnter your choice (1-3 or Q): ";
         cin >> choice;
-
+        cin.clear();
         // Clear the input buffer to handle any leftover input
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
-        switch (choice) {
-            case 1:
+        switch (toupper(choice)) {
+            case '1':
                 displayWatchlist(watchlist);
                 break;
-            case 2:
+            case '2':
                 addStock(watchlist);
                 saveWatchlist(username, watchlist);
                 break;
-            case 3:
+            case '3':
                 removeStock(watchlist);
                 saveWatchlist(username, watchlist);
                 break;
-            case 4:
+            case 'Q':
                 system("clear");
                 break;
             default:
                 cout << "Invalid choice. Please enter a number between 1 and 4." << endl;
+                this_thread::sleep_for(chrono::seconds(3));
+                system("clear");
         }
-    } while (choice != 4);
-}
-
-void runWatchlist(const string& username) {
-    watchlistMenu(username);
+    } while (toupper(choice) != 'Q');
 }

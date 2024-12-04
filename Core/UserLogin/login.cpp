@@ -10,6 +10,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
+#include <thread>
 #include "login.h"
 #include "../Menu/mainmenu.h"
 using namespace std;
@@ -42,14 +43,15 @@ void login::Login() {
     }
     input.close();
     if (count == "1") {
-        cout << "User: " << username << endl;
-        cout << "Login successful! Welcome to the kite-simulator!";
         system("clear");
+        cout << "User: " << username << endl;
+        cout << "Login successful! Welcome to the kite-simulator!" << endl;
         runMainMenu(username);
     }
     else {
         system("clear");
         cout << "Username or password is incorrect. Please try again or register as a new user." << endl;
+        this_thread::sleep_for(chrono::seconds(5));
         Login(); // Call Login() again after incorrect password
     }
 }
@@ -81,7 +83,19 @@ void login::Registration() {
         ofstream f1(dataFilePath, ios::app);
         f1 << regUser << ' ' << hashPassword << ' ' << securityHash << endl;
         system("clear");
+        ofstream balanceFile("Core/Funds/" + regUser + "_balance.csv");
+        if (balanceFile.is_open()) {
+            balanceFile << "0.00";
+            balanceFile.close();
+        } else {
+            cerr << "Error: Unable to initialize balance file." << endl;
+        }
+        ofstream("Core/Portfolio/" + regUser + "_portfolio.dat").close();
+        ofstream("Core/Positions/" + regUser + "_positions.dat").close();
+        ofstream("Core/Watchlist/" + regUser + "_watchlist.txt").close();
+        cout << "Data files created." << endl;
         cout << "Registration successful!" << endl;
+        this_thread::sleep_for(chrono::seconds(5));
         Login(); // Call Login() after registration
         return;
     }
@@ -130,6 +144,7 @@ void login::Registration() {
             ofstream("Core/Watchlist/" + regUser + "_watchlist.txt").close();
             cout << "Data files created." << endl;
             cout << "Registration successful!" << endl;
+            this_thread::sleep_for(chrono::seconds(5));
             Login(); // Call Login() after registration
             return;
         }
@@ -183,6 +198,7 @@ void login::ForgotPassword() {
 
         if (userFound) {
             cout << "Password reset successful!" << endl;
+            this_thread::sleep_for(chrono::seconds(5));
             Login(); // Call Login() after password reset
         } else {
             cout << "Username or security answer is incorrect." << endl;

@@ -7,7 +7,6 @@
 #include "Core/holding.h"
 using namespace std;
 
-pair<double, string> getCurrentMarketPrice(const string& symbol);
 void loadPortfolio(const string& username, vector<Holding>& portfolio);
 void calculateUnrealizedPL(vector<Holding>& portfolio);
 void displayPortfolio(const vector<Holding>& portfolio, const string& username);

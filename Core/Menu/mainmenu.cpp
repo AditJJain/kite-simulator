@@ -21,7 +21,7 @@ void runMainMenu(const std::string& username) {
         cout << "6 - Add/Withdraw Funds" << endl;
         cout << "7 - View Trade History" << endl;
         cout << "8 - Exit" << endl;
-        cout << "Enter your choice: ";
+        cout << "\nEnter your choice: ";
 
         // Check if the input is an integer
         if (!(cin >> choice)) {

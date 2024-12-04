@@ -27,7 +27,7 @@ void viewMarketData(const string& username) {
             return "Error: Failed to execute Python script.\n";
         }
         char buffer[128];
-        string result = "";
+        string result;
         while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
             result += buffer;
         }
@@ -37,59 +37,46 @@ void viewMarketData(const string& username) {
 
     setNonBlockingMode(true); // Enable non-blocking mode
 
-    while (true) {
-        // Clear the screen
-        cout << "\033[H\033[J";
+    if (choice == 'Y' || choice == 'y') {
+        string url = "https://in.tradingview.com/chart/?symbol=" + stockSymbol;
 
-        if (choice == 'Y' || choice == 'y') {
-            string url = "https://in.tradingview.com/chart/?symbol=" + stockSymbol;
-
-#ifdef _WIN32
-            string openCommand = "start " + url;
-#elif __APPLE__
+        #ifdef __APPLE__
             string openCommand = "open " + url;
-#elif __linux__
+        #elif __linux__
             string openCommand = "xdg-open " + url;
-#else
+        #else
             cerr << "Error: Unsupported platform.\n";
-            break;
-#endif
-
-        // Execute the command to open the browser
-        int openResult = system(openCommand.c_str());
-        if (openResult != 0) {
-                cerr << "Error: Failed to open the TradingView chart.\n";
-                break;
-            } else {
-                cout << "Opening the chart for " << stockSymbol << "...\n";
-                this_thread::sleep_for(chrono::seconds(5));
-            }
             setNonBlockingMode(false);
-            system("clear");
             return;
-        } else {
-            // Fetch OHLC data
-            string ohlcData = fetchOHLC(stockSymbol);
+        #endif
 
-            // Display OHLC and timestamp
-            cout << "User: " << username << endl;
-            cout << "\n=== Market Data ===" << endl;
-            cout << ohlcData;
-        }
-
-        // Check for 'Q' to exit
-        for (int i = 0; i < 50; ++i) { // 50 * 100ms = 5 seconds
-            char ch;
-            if (read(STDIN_FILENO, &ch, 1) > 0) {
-                if (ch == 'Q' || ch == 'q') {
-                    setNonBlockingMode(false); // Disable non-blocking mode
-                    system("clear"); // Clear the screen
-                    return; // Exit the function
-                }
-            }
-            this_thread::sleep_for(chrono::milliseconds(500));
-        }
+        system(openCommand.c_str());
+        setNonBlockingMode(false);
+        return;
     }
 
-    setNonBlockingMode(false); // Disable non-blocking mode before exiting
+    while (true) {
+        // Fetch updated OHLC data each loop iteration
+        string ohlcData = fetchOHLC(stockSymbol);
+
+        // Clear the screen
+        cout << "\033[H\033[J";
+        cout << "User: " << username << endl;
+        cout << "\n=== Market Data ===" << endl;
+        cout << ohlcData << endl;
+        cout << "Press 'Q' to return to the main menu." << endl << flush;
+
+        // Wait for 5 seconds and check for 'Q' input periodically
+        for (int i = 0; i < 50; ++i) { // Check for input every 100 ms (50 * 100ms = 5 seconds)
+            char ch;
+            if (read(STDIN_FILENO, &ch, 1) > 0) {
+                if (toupper(ch) == 'Q') {
+                    setNonBlockingMode(false); // Reset to blocking mode
+                    system("clear");
+                    return;
+                }
+            }
+            this_thread::sleep_for(chrono::milliseconds(100));
+        }
+    }
 }

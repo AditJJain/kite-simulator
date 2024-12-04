@@ -21,7 +21,6 @@ void resetTerminalMode();
 void setTerminalMode();
 bool isKeyPressed(char& c);
 
-void watchlistMenu(const std::string& username);
 void runWatchlist(const std::string& username);
 
 #endif // WATCHLIST_H

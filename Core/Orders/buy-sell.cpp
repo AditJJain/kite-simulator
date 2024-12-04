@@ -14,14 +14,7 @@
 #include "Core/holding.h"
 #include "Core/intradayPosition.h"
 #include "Core/APIs/apicall_KiteConnect_LTP.h"
-
 using namespace std;
-
-// Utility function to clear input buffer and reset cin
-void clearInput() {
-    cin.clear(); // Clear error flags
-    cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Ignore remaining input
-}
 
 // Utility function to trim strings
 string trim(const string& str) {
@@ -219,7 +212,7 @@ void buyStock(const string& username) {
     string symbol, orderType;
     int quantity;
 
-    cout << "Enter stock symbol: ";
+    cout << "Enter instrument symbol: ";
     cin >> symbol;
 
     auto [price, timestamp] = getCurrentMarketPrice(symbol);
@@ -229,12 +222,12 @@ void buyStock(const string& username) {
         return;
     }
 
-    cout << "Current price for " << symbol << ": ₹" << price << endl;
+    cout << "Current price for " << symbol << " (at " << timestamp << ")" << ": ₹" << price << endl;
     cout << "Enter quantity: ";
     cin >> quantity;
 
     double totalCost = price * quantity;
-    cout << "Enter order type (CNC/MIS): ";
+    cout << "Enter order type (CNC/NRML/MIS): ";
     cin >> orderType;
     transform(orderType.begin(), orderType.end(), orderType.begin(), ::toupper);
 
@@ -247,10 +240,10 @@ void buyStock(const string& username) {
 
     modifyFunds(-totalCost, username);
 
-    if (orderType == "CNC") {
+    if ((orderType == "CNC" || orderType == "NRML") && quantity > 0) {
         addPortfolioEntry(username, symbol, quantity, price);
-        cout << "Bought " << quantity << " shares of " << symbol << " (CNC) at ₹" << price << ".\n";
-    } else {
+        cout << "Bought " << quantity << " shares of " << symbol << " (CNC/NRML) at ₹" << price << ".\n";
+    } else if (quantity > 0) {
         addPositionEntry(username, symbol, quantity, price, timestamp);
         cout << "Bought " << quantity << " shares of " << symbol << " (MIS) at ₹" << price << ".\n";
     }
@@ -265,7 +258,7 @@ void sellStock(const string& username) {
     cin >> symbol;
     cout << "Enter quantity to sell: ";
     cin >> quantity;
-    cout << "Enter order type (CNC/MIS): ";
+    cout << "Enter order type (CNC/NRML/MIS): ";
     cin >> orderType;
     transform(orderType.begin(), orderType.end(), orderType.begin(), ::toupper);
 
@@ -278,12 +271,12 @@ void sellStock(const string& username) {
 
     double totalProceeds = price * quantity;
 
-    if (orderType == "CNC") {
+    if ((orderType == "CNC" || orderType == "NRML") && quantity > 0) {
         if (removePortfolioEntry(username, symbol, quantity)) {
             modifyFunds(totalProceeds, username);
             cout << "Sold " << quantity << " shares of " << symbol << " (CNC) at ₹" << price << ".\n";
         }
-    } else {
+    } else if (quantity > 0) {
         addPositionEntry(username, symbol, -quantity, price, timestamp);
         modifyFunds(totalProceeds, username);
         cout << "Shorted " << quantity << " shares of " << symbol << " (MIS) at ₹" << price << ".\n";
@@ -298,10 +291,11 @@ void runBuySell(const string& username) {
         system("clear");
         cout << "User: " << username << endl;
         cout << "\n=== Buy/Sell Menu ===\n";
-        cout << "1. Buy Stock\n2. Sell Stock\nQ. Exit to Main Menu\n";
-        cout << "Enter your choice (1-2 or Q): ";
+        cout << "1. Buy Instrument\n2. Sell Instrument\nQ. Exit to Main Menu" << endl;
+        cout << "\nEnter your choice (1-2 or Q): ";
         cin >> choice;
-        clearInput();
+        cin.clear(); // Clear error flags
+        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Ignore remaining input
 
         switch (toupper(choice)) {
             case '1':
@@ -319,7 +313,7 @@ void runBuySell(const string& username) {
         }
 
         if (toupper(choice) != 'Q') {
-            std::this_thread::sleep_for(std::chrono::seconds(5));
+            this_thread::sleep_for(std::chrono::seconds(5));
         }
     } while (toupper(choice) != 'Q');
 }
