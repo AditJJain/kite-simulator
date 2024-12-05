@@ -38,6 +38,7 @@ void loadPortfolio(const string& username, vector<Holding>& portfolio) {
         infile.close();
     } else {
         // Portfolio file doesn't exist; start with an empty portfolio
+        cout << "Portfolio file not found, starting with an empty portfolio." << endl;
         portfolio.clear();
     }
 }
@@ -79,8 +80,8 @@ void displayPortfolio(const vector<Holding>& portfolio, const string& username) 
         cout << left << setw(10) << holding.symbol
              << right << setw(10) << holding.quantity
              << setw(15) << fixed << setprecision(2) << holding.averagePrice
-             << setw(15) << holding.currentPrice
-             << setw(15) << holding.unrealizedPL << endl;
+             << setw(15) << (holding.currentPrice > 0.0 ? to_string(holding.currentPrice) : "N/A")
+             << setw(15) << (holding.unrealizedPL != 0.0 ? to_string(holding.unrealizedPL) : "N/A") << endl;
         totalUnrealizedPL += holding.unrealizedPL;
     }
 

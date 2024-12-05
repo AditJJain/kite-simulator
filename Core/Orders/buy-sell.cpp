@@ -14,6 +14,11 @@
 #include "Core/holding.h"
 #include "Core/intradayPosition.h"
 #include "Core/APIs/apicall_KiteConnect_LTP.h"
+<<<<<<< HEAD
+=======
+#include "Core/TradeHistory/tradehistory.h"
+
+>>>>>>> 477e339 (added Timestamps and Trade History)
 using namespace std;
 
 // Utility function to trim strings
@@ -207,19 +212,18 @@ void addPositionEntry(const std::string& username, const std::string& symbol, in
     outfile.close();
 }
 
-// Function to handle buying stocks
-void buyStock(const string& username) {
+tuple<string, int, double> buyStock(const string& username) {
     string symbol, orderType;
     int quantity;
 
     cout << "Enter instrument symbol: ";
     cin >> symbol;
 
-    auto [price, timestamp] = getCurrentMarketPrice(symbol);
+    auto [price, timestamp] = getCurrentMarketPrice(symbol); // Capture timestamp
 
     if (price <= 0) {
         cerr << "Error: Failed to retrieve stock price.\n";
-        return;
+        return {};  // Return an empty tuple
     }
 
     cout << "Current price for " << symbol << " (at " << timestamp << ")" << ": ₹" << price << endl;
@@ -235,22 +239,32 @@ void buyStock(const string& username) {
 
     if (!checkFunds(totalCost, username)) {
         cerr << "Error: Insufficient funds.\n";
-        return;
+        return {};  // Return an empty tuple
     }
 
     modifyFunds(-totalCost, username);
 
     if ((orderType == "CNC" || orderType == "NRML") && quantity > 0) {
         addPortfolioEntry(username, symbol, quantity, price);
+<<<<<<< HEAD
         cout << "Bought " << quantity << " shares of " << symbol << " (CNC/NRML) at ₹" << price << ".\n";
     } else if (quantity > 0) {
         addPositionEntry(username, symbol, quantity, price, timestamp);
+=======
+        cout << "Bought " << quantity << " shares of " << symbol << " (CNC) at ₹" << price << ".\n";
+    } else {
+        addPositionEntry(username, symbol, quantity, price, timestamp); // Pass timestamp for MIS
+>>>>>>> 477e339 (added Timestamps and Trade History)
         cout << "Bought " << quantity << " shares of " << symbol << " (MIS) at ₹" << price << ".\n";
     }
+
+    // Log the trade history for the buy transaction
+    logTradeHistory(username, "Buy", symbol, quantity, price);
+
+    return {symbol, quantity, price}; // Return trade details
 }
 
-// Function to handle selling stocks
-void sellStock(const string& username) {
+tuple<string, int, double> sellStock(const string& username) {
     string symbol, orderType;
     int quantity;
 
@@ -266,24 +280,46 @@ void sellStock(const string& username) {
 
     if (price <= 0) {
         cerr << "Error: Failed to retrieve stock price.\n";
-        return;
+        return {}; // Return an empty tuple
     }
 
     double totalProceeds = price * quantity;
+    bool success = false;
 
+<<<<<<< HEAD
     if ((orderType == "CNC" || orderType == "NRML") && quantity > 0) {
+=======
+    if (orderType == "CNC") {
+        // Ensure stock is available and log only if successful
+>>>>>>> 477e339 (added Timestamps and Trade History)
         if (removePortfolioEntry(username, symbol, quantity)) {
             modifyFunds(totalProceeds, username);
             cout << "Sold " << quantity << " shares of " << symbol << " (CNC) at ₹" << price << ".\n";
+            success = true;
         }
+<<<<<<< HEAD
     } else if (quantity > 0) {
         addPositionEntry(username, symbol, -quantity, price, timestamp);
+=======
+    } else if (orderType == "MIS") {
+        addPositionEntry(username, symbol, -quantity, price, timestamp); // Short selling
+>>>>>>> 477e339 (added Timestamps and Trade History)
         modifyFunds(totalProceeds, username);
         cout << "Shorted " << quantity << " shares of " << symbol << " (MIS) at ₹" << price << ".\n";
+        success = true;
     }
+
+    // Log only if the transaction was successful
+    if (success) {
+        logTradeHistory(username, "Sell", symbol, quantity, price);
+    } else {
+        cerr << "Error: Could not complete the sell transaction.\n";
+    }
+
+    return success ? make_tuple(symbol, quantity, price) : tuple<string, int, double>{};
 }
 
-// Main buy/sell menu
+
 void runBuySell(const string& username) {
     char choice = '0';
 
@@ -298,12 +334,16 @@ void runBuySell(const string& username) {
         cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Ignore remaining input
 
         switch (toupper(choice)) {
-            case '1':
-                buyStock(username);
+            case '1': {
+                auto [symbol, quantity, price] = buyStock(username);  // Capture return values
+                // No need to log here, it's already logged inside buyStock()
                 break;
-            case '2':
-                sellStock(username);
+            }
+            case '2': {
+                auto [symbol, quantity, price] = sellStock(username);  // Capture return values
+                // No need to log here, it's already logged inside sellStock()
                 break;
+            }
             case 'Q':
                 system("clear");
                 break;
@@ -313,7 +353,11 @@ void runBuySell(const string& username) {
         }
 
         if (toupper(choice) != 'Q') {
+<<<<<<< HEAD
             this_thread::sleep_for(std::chrono::seconds(5));
+=======
+            std::this_thread::sleep_for(std::chrono::seconds(5));  // Pause for 5 seconds before showing menu again
+>>>>>>> 477e339 (added Timestamps and Trade History)
         }
     } while (toupper(choice) != 'Q');
 }

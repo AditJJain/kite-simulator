@@ -8,7 +8,7 @@ using namespace std;
 
 // Function to get current market price using a Python script
 pair<double, string> getCurrentMarketPrice(const string& symbol) {
-    string command = "/opt/anaconda3/bin/python3 Core/APIs/api_KiteConnectWS_LTP_Once.py " + symbol;
+    string command = "/opt/anaconda3/bin/python Core/APIs/api_KiteConnectWS_LTP_Once.py " + symbol;
     char buffer[128];
     string result;
 

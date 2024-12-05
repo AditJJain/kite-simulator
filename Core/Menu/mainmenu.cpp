@@ -4,7 +4,9 @@
 #include "Core/Positions/intraday.h"
 #include "Core/Watchlist/watchlist.h"
 #include "Core/Funds/funds.h"
+#include "Core/TradeHistory/tradehistory.h" // Include the trade history header
 #include <iostream>
+#include <limits>
 using namespace std;
 
 void runMainMenu(const std::string& username) {
@@ -25,12 +27,10 @@ void runMainMenu(const std::string& username) {
 
         // Check if the input is an integer
         if (!(cin >> choice)) {
-            // Clear the error flag
-            cin.clear();
-            // Ignore invalid input up to the newline
-            cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            cout << "Invalid input. Please enter a number between 1 and 7." << endl;
-            continue;  // Restart the loop for a new input
+            cin.clear(); // Clear the error flag
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Ignore invalid input
+            cout << "Invalid input. Please enter a number between 1 and 8." << endl;
+            continue; // Restart the loop
         }
 
         switch (choice) {
@@ -53,14 +53,15 @@ void runMainMenu(const std::string& username) {
                 runFundsManagement(username);
                 break;
             case 7:
-                cout << "Viewing Trade History..." << endl;
+                cout << "\nViewing Trade History...\n";
+                showTradeHistory(username); // Call the trade history function
                 break;
             case 8:
                 cout << "Exiting program. Goodbye!" << endl;
                 end = true;
                 break;
             default:
-                cout << "Invalid choice. Please enter a number between 1 and 7." << endl;
+                cout << "Invalid choice. Please enter a number between 1 and 8." << endl;
                 break;
         }
     }
