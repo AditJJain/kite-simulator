@@ -4,9 +4,8 @@
 #include "Core/Positions/intraday.h"
 #include "Core/Watchlist/watchlist.h"
 #include "Core/Funds/funds.h"
-#include "Core/TradeHistory/tradehistory.h" // Include the trade history header
+#include "Core/TradeHistory/tradehistory.h"
 #include <iostream>
-#include <limits>
 using namespace std;
 
 void runMainMenu(const std::string& username) {
@@ -53,8 +52,7 @@ void runMainMenu(const std::string& username) {
                 runFundsManagement(username);
                 break;
             case 7:
-                cout << "\nViewing Trade History...\n";
-                showTradeHistory(username); // Call the trade history function
+                showTradeHistory(username);
                 break;
             case 8:
                 cout << "Exiting program. Goodbye!" << endl;

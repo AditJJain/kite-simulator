@@ -5,6 +5,7 @@ Core/Watchlist/*.txt
 .DS_Store
 .dSYM
 /Keys
+*.log
 *.o
 *.out
 /Redundant

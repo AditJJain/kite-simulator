@@ -14,11 +14,7 @@
 #include "Core/holding.h"
 #include "Core/intradayPosition.h"
 #include "Core/APIs/apicall_KiteConnect_LTP.h"
-<<<<<<< HEAD
-=======
 #include "Core/TradeHistory/tradehistory.h"
-
->>>>>>> 477e339 (added Timestamps and Trade History)
 using namespace std;
 
 // Utility function to trim strings
@@ -246,15 +242,9 @@ tuple<string, int, double> buyStock(const string& username) {
 
     if ((orderType == "CNC" || orderType == "NRML") && quantity > 0) {
         addPortfolioEntry(username, symbol, quantity, price);
-<<<<<<< HEAD
         cout << "Bought " << quantity << " shares of " << symbol << " (CNC/NRML) at ₹" << price << ".\n";
     } else if (quantity > 0) {
         addPositionEntry(username, symbol, quantity, price, timestamp);
-=======
-        cout << "Bought " << quantity << " shares of " << symbol << " (CNC) at ₹" << price << ".\n";
-    } else {
-        addPositionEntry(username, symbol, quantity, price, timestamp); // Pass timestamp for MIS
->>>>>>> 477e339 (added Timestamps and Trade History)
         cout << "Bought " << quantity << " shares of " << symbol << " (MIS) at ₹" << price << ".\n";
     }
 
@@ -286,24 +276,14 @@ tuple<string, int, double> sellStock(const string& username) {
     double totalProceeds = price * quantity;
     bool success = false;
 
-<<<<<<< HEAD
     if ((orderType == "CNC" || orderType == "NRML") && quantity > 0) {
-=======
-    if (orderType == "CNC") {
-        // Ensure stock is available and log only if successful
->>>>>>> 477e339 (added Timestamps and Trade History)
         if (removePortfolioEntry(username, symbol, quantity)) {
             modifyFunds(totalProceeds, username);
             cout << "Sold " << quantity << " shares of " << symbol << " (CNC) at ₹" << price << ".\n";
             success = true;
         }
-<<<<<<< HEAD
     } else if (quantity > 0) {
         addPositionEntry(username, symbol, -quantity, price, timestamp);
-=======
-    } else if (orderType == "MIS") {
-        addPositionEntry(username, symbol, -quantity, price, timestamp); // Short selling
->>>>>>> 477e339 (added Timestamps and Trade History)
         modifyFunds(totalProceeds, username);
         cout << "Shorted " << quantity << " shares of " << symbol << " (MIS) at ₹" << price << ".\n";
         success = true;
@@ -353,11 +333,7 @@ void runBuySell(const string& username) {
         }
 
         if (toupper(choice) != 'Q') {
-<<<<<<< HEAD
             this_thread::sleep_for(std::chrono::seconds(5));
-=======
-            std::this_thread::sleep_for(std::chrono::seconds(5));  // Pause for 5 seconds before showing menu again
->>>>>>> 477e339 (added Timestamps and Trade History)
         }
     } while (toupper(choice) != 'Q');
 }
