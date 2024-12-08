@@ -1,39 +1,30 @@
-#include <iostream>
+#include <chrono>
+#include <ctime>
 #include <fstream>
 #include <iomanip>   // For output formatting
+#include <iostream>
 #include <sstream>   // For string manipulation
-#include <chrono>    // For time functions
-#include "Core/Orders/buy-sell.h"            // Header for buy/sell functions
-#include "Core/intradayPosition.h"  
 #include <sys/stat.h>
-#include <ctime>
+#include <termios.h>
+#include <thread>
+#include <unistd.h>
+#include "Core/Orders/buy-sell.h"
+#include "Core/setNonBlockingMode.h"
 using namespace std;
 
 // Function to get current timestamp
-std::string getCurrentTimestamp() {
-    auto now = std::chrono::system_clock::now();
-    std::time_t currentTime = std::chrono::system_clock::to_time_t(now);
+string getCurrentTimestamp() {
+    auto now = chrono::system_clock::now();
+    time_t currentTime = chrono::system_clock::to_time_t(now);
     char buffer[100];
-    std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", std::localtime(&currentTime));
-    return std::string(buffer);
-}
-
-// Ensures the directory exists or creates it
-void createDirectoryIfNotExist(const string& dirPath) {
-    struct stat info;
-    if (stat(dirPath.c_str(), &info) != 0) {
-        if (mkdir(dirPath.c_str(), 0777) == -1) {
-            cerr << "Error: Unable to create directory " << dirPath << endl;
-        }
-    }
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", localtime(&currentTime));
+    return string(buffer);
 }
 
 // Log trade history to a file
 void logTradeHistory(const string& username, const string& action, const string& symbol, int quantity, double price) {
     string timestamp = getCurrentTimestamp();
     string historyFile = "Core/TradeHistory/" + username + "_history.log";
-
-    createDirectoryIfNotExist("Core/TradeHistory");  // Ensure directory exists
 
     ofstream outfile(historyFile, ios::app); // Append to the history file
     if (!outfile.is_open()) {
@@ -43,55 +34,48 @@ void logTradeHistory(const string& username, const string& action, const string&
 
     outfile << timestamp << " | " << action << " | " << symbol << " | Quantity: " << quantity << " | Price: ₹" << fixed << setprecision(2) << price << endl;
     outfile.close();
-    cout << "Trade history written successfully." << endl;  // Debug output
 }
 
 // Displays the trade history for a given user
-void showTradeHistory(const string& username) {
+void runTradeHistory(const string& username) {
     string historyFile = "Core/TradeHistory/" + username + "_history.log";
 
-    // Check if file exists, if not create it
-    ifstream infile(historyFile);
-    if (!infile.is_open()) {
-        // Create a new empty file if it doesn't exist
-        ofstream newFile(historyFile);
-        if (!newFile) {
-            cerr << "Error: Unable to create trade history file.\n";
-            return;
-        } else {
-            cout << "New trade history file created for user " << username << endl;
+    setNonBlockingMode(true); // Enable non-blocking mode
+    while (true) {
+        cout << "\033[2J\033[H"; // Clear screen and move cursor to top-left
+        
+        ifstream infile(historyFile);
+
+        // Display the content of the file
+        cout << "\033[2J\033[H"; // Clear screen and move cursor to top-left
+        cout << "User: " << username << endl;
+        cout << "\n=== Trade History ===" << endl;
+        cout << left << setw(20) << "Timestamp"
+            << setw(10) << "Action"
+            << setw(10) << "Symbol"
+            << setw(10) << "Quantity"
+            << setw(15) << "Price" << endl;
+
+        string line;
+        while (getline(infile, line)) {
+            cout << line << endl;
         }
-        newFile.close(); // Close the newly created file
-        return;
+        infile.close();
+        cout << "----------------------------------------------------------\n";
+        cout << "\nPress 'Q' to return to the main menu." << endl << flush;
+
+        // Sleep for 5 seconds while checking for user input
+        for (int i = 0; i < 50; ++i) {
+            char ch;
+            if (read(STDIN_FILENO, &ch, 1) > 0) {
+                if (ch == 'Q' || ch == 'q') {
+                    setNonBlockingMode(false); // Disable non-blocking mode
+                    system("clear"); // Clear the screen
+                    return; // Exit the function
+                }
+            }
+            this_thread::sleep_for(chrono::milliseconds(100));
+        }
     }
-
-    // Display the content of the file
-    cout << "\n=== Trade History for " << username << " ===\n";
-    cout << left << setw(20) << "Timestamp"
-         << setw(10) << "Action"
-         << setw(10) << "Symbol"
-         << setw(10) << "Quantity"
-         << setw(15) << "Price" << endl;
-    cout << "----------------------------------------------------------\n";
-
-    string line;
-    while (getline(infile, line)) {
-        cout << line << endl;
-    }
-    infile.close();
-    cout << "\nPress 'Q' to return to the main menu." << endl;
+    setNonBlockingMode(false); // Disable non-blocking mode before exiting
 }
-
-// Displays the trade history for a user interactively
-void runTradeHistory(const string& username) {
-    char choice;
-
-    do {
-        showTradeHistory(username);
-        cout << "\nEnter 'Q' to quit or any other key to refresh: ";
-        cin >> choice;
-        cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Clear input buffer
-
-    } while (toupper(choice) != 'Q');
-}
-

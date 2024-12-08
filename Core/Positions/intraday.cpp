@@ -1,19 +1,14 @@
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <vector>
-#include <unistd.h>
-#include <iomanip>   // For formatting output
-#include <sstream>   // For parsing strings
-#include <cstdio>    // For popen()
-#include <memory>    // For managing dynamic allocations
-#include <thread>    // For sleep
 #include <chrono>    // For time
-#include <algorithm> // For sorting and calculations
-#include <map>       // For holding portfolio data
-#include <numeric>   // For accumulating totals
-#include "Core/APIs/apicall_KiteConnect_LTP.h"
+#include <fstream>
+#include <iomanip>   // For formatting output
+#include <iostream>
+#include <sstream>   // For parsing strings
+#include <string>
+#include <thread>    // For sleep
+#include <unistd.h>
+#include <vector>
 #include "Core/intradayPosition.h"
+#include "Core/APIs/apicall_KiteConnect_LTP.h"
 #include "Core/setNonBlockingMode.h"
 using namespace std;
 

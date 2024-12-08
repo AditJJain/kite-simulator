@@ -8,7 +8,6 @@ public:
     void Login();
     void Registration();
     void ForgotPassword();
-    void DeleteLine(std::string userDelete);
 };
 
 void runUserLogin();

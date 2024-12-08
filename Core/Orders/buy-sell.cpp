@@ -1,30 +1,21 @@
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <vector>
-#include <sstream>
 #include <algorithm>
-#include <memory>
-#include <stdexcept>
-#include <chrono>
-#include <thread>
 #include <cctype>
+#include <chrono>
+#include <cstdlib>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <thread>
 #include <utility>
-#include <cstdlib> // For system()
+#include <vector>
 #include "Core/holding.h"
 #include "Core/intradayPosition.h"
 #include "Core/APIs/apicall_KiteConnect_LTP.h"
+#include "Core/Orders/getLotSize.h"
 #include "Core/TradeHistory/tradehistory.h"
 using namespace std;
 
-// Utility function to trim strings
-string trim(const string& str) {
-    auto start = str.find_first_not_of(" \t");
-    auto end = str.find_last_not_of(" \t");
-    return (start == string::npos) ? "" : str.substr(start, end - start + 1);
-}
-
-// Check if there are enough funds
 bool checkFunds(double amount, const string& username) {
     ifstream infile("Core/Funds/" + username + "_balance.csv");
     if (!infile.is_open()) {
@@ -37,7 +28,6 @@ bool checkFunds(double amount, const string& username) {
     return balance >= amount;
 }
 
-// Modify user's funds (add or deduct)
 void modifyFunds(double amount, const string& username) {
     ifstream infile("Core/Funds/" + username + "_balance.csv");
     if (!infile.is_open()) {
@@ -152,8 +142,7 @@ bool removePortfolioEntry(const string& username, const string& symbol, int quan
     return true;
 }
 
-// Add or update a position entry
-void addPositionEntry(const std::string& username, const std::string& symbol, int quantity, double price, const std::string& timestamp) {
+void addPositionEntry(const string& username, const string& symbol, int quantity, double price) {
     std::string positionsFile = "Core/Positions/" + username + "_positions.dat";
     std::vector<IntradayPosition> positions;
     bool found = false;
@@ -169,8 +158,6 @@ void addPositionEntry(const std::string& username, const std::string& symbol, in
                 if (pos.symbol == symbol) {
                     pos.quantity += quantity;
                     pos.entryPrice = ((pos.entryPrice * (pos.quantity - quantity)) + (price * quantity)) / pos.quantity;
-                    pos.timestamp = timestamp; // Update timestamp if needed
-                    // Optionally update currentPrice and unrealizedPL if applicable
                     found = true;
                 }
                 positions.push_back(pos);
@@ -185,9 +172,6 @@ void addPositionEntry(const std::string& username, const std::string& symbol, in
         newPos.symbol = symbol;
         newPos.quantity = quantity;
         newPos.entryPrice = price;
-        newPos.currentPrice = price; // Initialize currentPrice
-        newPos.unrealizedPL = 0.0;  // Initialize unrealized P/L
-        newPos.timestamp = timestamp;
         positions.push_back(newPos);
     }
 
@@ -200,105 +184,188 @@ void addPositionEntry(const std::string& username, const std::string& symbol, in
     for (const auto& pos : positions) {
         outfile << pos.symbol << " "
                 << pos.quantity << " "
-                << pos.entryPrice << " "
-                << pos.currentPrice << " "
-                << pos.unrealizedPL << " "
-                << pos.timestamp << std::endl;
+                << pos.entryPrice << " ";
     }
     outfile.close();
 }
 
-tuple<string, int, double> buyStock(const string& username) {
+void removePositionEntry(const string& username, const string& symbol, int quantity) {
+    string positionsFile = "Core/Positions/" + username + "_positions.dat";
+    ifstream infile(positionsFile);
+    if (!infile.is_open()) {
+        cerr << "Error: Unable to open positions file.\n";
+    }
+
+    ofstream tempFile("Core/Positions/temp.dat");
+    if (!tempFile.is_open()) {
+        cerr << "Error: Unable to open temporary file.\n";
+        infile.close();
+    }
+
+    bool found = false;
+    string line;
+    while (getline(infile, line)) {
+        istringstream iss(line);
+        IntradayPosition pos;
+        if (iss >> pos.symbol >> pos.quantity >> pos.entryPrice) {
+            if (pos.symbol == symbol) {
+                if (pos.quantity >= quantity) {
+                    pos.quantity -= quantity;
+                    found = true;
+                }
+                if (pos.quantity > 0) {
+                    tempFile << pos.symbol << " " << pos.quantity << " " << pos.entryPrice << "\n";
+                }
+            } else {
+                tempFile << pos.symbol << " " << pos.quantity << " " << pos.entryPrice << "\n";
+            }
+        }
+    }
+
+    infile.close();
+    tempFile.close();
+
+    if (!found) {
+        cerr << "Error: Position not found or insufficient quantity.\n";
+        remove("Core/Positions/temp.dat");
+    }
+
+    remove(positionsFile.c_str());
+    rename("Core/Positions/temp.dat", positionsFile.c_str());
+}
+
+void buyStock(const string& username) {
     string symbol, orderType;
     int quantity;
 
     cout << "Enter instrument symbol: ";
     cin >> symbol;
+    transform(symbol.begin(), symbol.end(), symbol.begin(), ::toupper);
+    auto [price, timestamp] = getCurrentMarketPrice(symbol); // Capture timestamp
+
+    if (price <= 0) {
+        cerr << "Error: Failed to retrieve stock price.\n";
+        return;
+    }
+
+    cout << "Current price for " << symbol << " (at " << timestamp << ")" << ": ₹" << price << endl;
+    cout << "Minimum quantity for " << symbol << ": " << getLotSize(symbol) << endl;
+    cout << "Enter quantity: ";
+    cin >> quantity;
+
+    if (quantity < getLotSize(symbol)) {
+        cerr << "Error: Quantity is less than the lot size.\n";
+        return;
+    } else if (quantity % getLotSize(symbol) != 0) {
+        cerr << "Error: Quantity is not a multiple of the lot size.\n";
+        return;
+    }
+
+    cout << "Enter order type (CNC/NRML/MIS): ";
+    cin >> orderType;
+    transform(orderType.begin(), orderType.end(), orderType.begin(), ::toupper);
+    
+    auto [finalPrice, finalTimestamp] = getCurrentMarketPrice(symbol); // Capture timestamp
+    double totalCost = finalPrice * quantity;
+
+    if (orderType == "CNC" || orderType == "NRML") {
+        cout << "Final price for " << quantity << " shares of " << symbol << " (at " << finalTimestamp << "): ₹" << totalCost << endl;
+    } else if (orderType == "MIS") {
+        totalCost /= 5;
+        cout << "Final price for " << quantity << " shares of " << symbol << " (at " << finalTimestamp << "): ₹" << totalCost << " (MIS - 5x Leverage)\n";
+    }
+    
+    cout << "Do you want to proceed with the order? (Y/N): ";
+    char confirm; cin >> confirm;
+
+    if (toupper(confirm) != 'Y') {
+        cout << "Order cancelled.\n";
+        return;
+    }
+
+    if (!checkFunds(totalCost, username)) {
+        cerr << "Error: Insufficient funds.\n";
+        return;
+    }
+
+    if ((orderType == "CNC" || orderType == "NRML") && quantity > 0) {
+        addPortfolioEntry(username, symbol, quantity, price);
+        modifyFunds(-totalCost, username);
+        logTradeHistory(username, "Buy", symbol, quantity, price);
+        cout << "Bought " << quantity << " shares of " << symbol << " (CNC/NRML) at ₹" << price << ".\n";
+    } else if (quantity > 0) {
+        addPositionEntry(username, symbol, quantity, price);
+        modifyFunds(-totalCost, username);
+        logTradeHistory(username, "Buy", symbol, quantity, price);
+        cout << "Bought " << quantity << " shares of " << symbol << " (MIS) at ₹" << price << ".\n";
+    }
+}
+
+void sellStock(const string& username) {
+    string symbol, orderType;
+    int quantity;
+
+    cout << "Enter stock symbol to sell: ";
+    cin >> symbol;
+    transform(symbol.begin(), symbol.end(), symbol.begin(), ::toupper);
 
     auto [price, timestamp] = getCurrentMarketPrice(symbol); // Capture timestamp
 
     if (price <= 0) {
         cerr << "Error: Failed to retrieve stock price.\n";
-        return {};  // Return an empty tuple
     }
 
     cout << "Current price for " << symbol << " (at " << timestamp << ")" << ": ₹" << price << endl;
     cout << "Enter quantity: ";
     cin >> quantity;
 
-    double totalCost = price * quantity;
     cout << "Enter order type (CNC/NRML/MIS): ";
     cin >> orderType;
     transform(orderType.begin(), orderType.end(), orderType.begin(), ::toupper);
 
-    if (orderType == "MIS") totalCost /= 5;
-
-    if (!checkFunds(totalCost, username)) {
-        cerr << "Error: Insufficient funds.\n";
-        return {};  // Return an empty tuple
+    if(orderType == "MIS" || orderType == "NRML") { // We only check against the lot size for MIS/NRML because the user is shorting an instrument. For CNC, the user is selling from their portfolio.
+        int lotSize = getLotSize(symbol);
+        if (quantity < lotSize) {
+            cerr << "Error: Quantity is less than the lot size.\n";
+            cout << "Lot size for " << symbol << ": " << lotSize << endl;
+            return;
+        } else if (quantity % lotSize != 0) {
+            cerr << "Error: Quantity is not a multiple of the lot size.\n";
+            cout << "Lot size for " << symbol << ": " << lotSize << endl;
+            return;
+        }
     }
 
-    modifyFunds(-totalCost, username);
+    auto [finalPrice, finalTimestamp] = getCurrentMarketPrice(symbol);
+    double totalProceeds = finalPrice * quantity;
 
-    if ((orderType == "CNC" || orderType == "NRML") && quantity > 0) {
-        addPortfolioEntry(username, symbol, quantity, price);
-        cout << "Bought " << quantity << " shares of " << symbol << " (CNC/NRML) at ₹" << price << ".\n";
-    } else if (quantity > 0) {
-        addPositionEntry(username, symbol, quantity, price, timestamp);
-        cout << "Bought " << quantity << " shares of " << symbol << " (MIS) at ₹" << price << ".\n";
+    if (orderType == "CNC") {
+        cout << "Final proceeds for " << quantity << " shares of " << symbol << " (at " << finalTimestamp << "): ₹" << totalProceeds << endl;
+    } else if (orderType == "MIS") {
+        totalProceeds /= 5;
+        cout << "Final proceeds for " << quantity << " shares of " << symbol << " (at " << finalTimestamp << "): ₹" << totalProceeds << " (MIS - 5x Leverage)\n";
+    }
+    cout << "Do you want to proceed with the order? (Y/N): ";
+    char confirm; cin >> confirm;
+
+    if(toupper(confirm) != 'Y') {
+        cout << "Order cancelled.\n";
+        return;
     }
 
-    // Log the trade history for the buy transaction
-    logTradeHistory(username, "Buy", symbol, quantity, price);
-
-    return {symbol, quantity, price}; // Return trade details
-}
-
-tuple<string, int, double> sellStock(const string& username) {
-    string symbol, orderType;
-    int quantity;
-
-    cout << "Enter stock symbol to sell: ";
-    cin >> symbol;
-    cout << "Enter quantity to sell: ";
-    cin >> quantity;
-    cout << "Enter order type (CNC/NRML/MIS): ";
-    cin >> orderType;
-    transform(orderType.begin(), orderType.end(), orderType.begin(), ::toupper);
-
-    auto [price, timestamp] = getCurrentMarketPrice(symbol);
-
-    if (price <= 0) {
-        cerr << "Error: Failed to retrieve stock price.\n";
-        return {}; // Return an empty tuple
-    }
-
-    double totalProceeds = price * quantity;
-    bool success = false;
-
-    if ((orderType == "CNC" || orderType == "NRML") && quantity > 0) {
+    if ((orderType == "CNC") && quantity > 0) {
         if (removePortfolioEntry(username, symbol, quantity)) {
             modifyFunds(totalProceeds, username);
+            logTradeHistory(username, "Sell", symbol, quantity, price);
             cout << "Sold " << quantity << " shares of " << symbol << " (CNC) at ₹" << price << ".\n";
-            success = true;
         }
     } else if (quantity > 0) {
-        addPositionEntry(username, symbol, -quantity, price, timestamp);
+        removePositionEntry(username, symbol, quantity);
         modifyFunds(totalProceeds, username);
-        cout << "Shorted " << quantity << " shares of " << symbol << " (MIS) at ₹" << price << ".\n";
-        success = true;
-    }
-
-    // Log only if the transaction was successful
-    if (success) {
         logTradeHistory(username, "Sell", symbol, quantity, price);
-    } else {
-        cerr << "Error: Could not complete the sell transaction.\n";
+        cout << "Sold " << quantity << " shares of " << symbol << " (MIS) at ₹" << price << ".\n";
     }
-
-    return success ? make_tuple(symbol, quantity, price) : tuple<string, int, double>{};
 }
-
 
 void runBuySell(const string& username) {
     char choice = '0';
@@ -315,13 +382,11 @@ void runBuySell(const string& username) {
 
         switch (toupper(choice)) {
             case '1': {
-                auto [symbol, quantity, price] = buyStock(username);  // Capture return values
-                // No need to log here, it's already logged inside buyStock()
+                buyStock(username);
                 break;
             }
             case '2': {
-                auto [symbol, quantity, price] = sellStock(username);  // Capture return values
-                // No need to log here, it's already logged inside sellStock()
+                sellStock(username);
                 break;
             }
             case 'Q':

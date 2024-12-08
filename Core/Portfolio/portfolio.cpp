@@ -1,19 +1,14 @@
-#include <iostream>
+#include <chrono>
+#include <fcntl.h>
 #include <fstream>
+#include <iomanip>   // For formatting output
+#include <iostream>
+#include <sstream>   // For parsing strings
 #include <string>
-#include <vector>
+#include <thread>    // For sleep
 #include <termios.h>
 #include <unistd.h>
-#include <fcntl.h>
-#include <iomanip>   // For formatting output
-#include <sstream>   // For parsing strings
-#include <algorithm> // For sorting and calculations
-#include <map>       // For holding portfolio data
-#include <numeric>   // For accumulating totals
-#include <cstdio>    // For popen()
-#include <memory>    // For managing dynamic allocations
-#include <thread>    // For sleep
-#include <chrono>    // For time
+#include <vector>
 #include "Core/holding.h"
 #include "Core/APIs/apicall_KiteConnect_LTP.h"
 #include "Core/setNonBlockingMode.h"

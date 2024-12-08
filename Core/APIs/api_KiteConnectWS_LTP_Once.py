@@ -1,4 +1,3 @@
-from datetime import datetime
 import logging
 import subprocess
 import sys
@@ -41,7 +40,7 @@ latest_tick = {}
 received_data = threading.Event()
 
 def on_ticks(ws, ticks):
-    """Callback to receive ticks."""
+    # Callback to receive ticks.
     global latest_tick
     for tick in ticks:
         if tick["instrument_token"] == instrument_token:
@@ -50,12 +49,12 @@ def on_ticks(ws, ticks):
             ws.close()  # Close the connection after receiving data
 
 def on_connect(ws, response):
-    """Callback on successful connect."""
+    # Callback on successful connect.
     ws.subscribe([instrument_token])
     ws.set_mode(ws.MODE_FULL, [instrument_token])
 
 def on_close(ws, code, reason):
-    """Callback on connection close."""
+    # Callback on connection close.
     ws.stop()
 
 # Assign the callbacks

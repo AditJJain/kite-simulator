@@ -1,3 +1,6 @@
+#include <chrono>
+#include <iostream>
+#include <thread>
 #include "Core/APIs/apicall_KiteConnect_OHLC.h"
 #include "Core/Orders/buy-sell.h"
 #include "Core/Portfolio/portfolio.h"
@@ -5,7 +8,6 @@
 #include "Core/Watchlist/watchlist.h"
 #include "Core/Funds/funds.h"
 #include "Core/TradeHistory/tradehistory.h"
-#include <iostream>
 using namespace std;
 
 void runMainMenu(const std::string& username) {
@@ -13,7 +15,8 @@ void runMainMenu(const std::string& username) {
     bool end = false;
 
     while (!end) {
-        cout << "\nChoose your option: " << endl;
+        cout << "User: " << username << endl;
+        cout << "\nOptions: " << endl;
         cout << "1 - View Market Data" << endl;
         cout << "2 - Place Order" << endl;
         cout << "3 - View Portfolio" << endl;
@@ -52,7 +55,7 @@ void runMainMenu(const std::string& username) {
                 runFundsManagement(username);
                 break;
             case 7:
-                showTradeHistory(username);
+                runTradeHistory(username);
                 break;
             case 8:
                 cout << "Exiting program. Goodbye!" << endl;
@@ -60,6 +63,8 @@ void runMainMenu(const std::string& username) {
                 break;
             default:
                 cout << "Invalid choice. Please enter a number between 1 and 8." << endl;
+                this_thread::sleep_for(chrono::seconds(3)); // Pause for 2 seconds
+                system("clear");
                 break;
         }
     }

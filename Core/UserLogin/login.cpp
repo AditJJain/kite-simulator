@@ -44,7 +44,6 @@ void login::Login() {
     input.close();
     if (count == "1") {
         system("clear");
-        cout << "User: " << username << endl;
         cout << "Login successful! Welcome to the kite-simulator!" << endl;
         runMainMenu(username);
     }
@@ -52,7 +51,7 @@ void login::Login() {
         system("clear");
         cout << "Username or password is incorrect. Please try again or register as a new user." << endl;
         this_thread::sleep_for(chrono::seconds(5));
-        Login(); // Call Login() again after incorrect password
+        runUserLogin();
     }
 }
 
@@ -93,6 +92,7 @@ void login::Registration() {
         ofstream("Core/Portfolio/" + regUser + "_portfolio.dat").close();
         ofstream("Core/Positions/" + regUser + "_positions.dat").close();
         ofstream("Core/Watchlist/" + regUser + "_watchlist.txt").close();
+        ofstream("Core/TradeHistory/" + regUser + "_history.log").close();
         cout << "Data files created." << endl;
         cout << "Registration successful!" << endl;
         this_thread::sleep_for(chrono::seconds(5));
@@ -142,6 +142,7 @@ void login::Registration() {
             ofstream("Core/Portfolio/" + regUser + "_portfolio.dat").close();
             ofstream("Core/Positions/" + regUser + "_positions.dat").close();
             ofstream("Core/Watchlist/" + regUser + "_watchlist.txt").close();
+            ofstream("Core/TradeHistory/" + regUser + "_history.log").close();
             cout << "Data files created." << endl;
             cout << "Registration successful!" << endl;
             this_thread::sleep_for(chrono::seconds(5));
@@ -154,8 +155,8 @@ void login::Registration() {
 void login::ForgotPassword() {
     string forgotChoice, count, secondCount;
     system("clear");
-    cout << "Press 1 to enter username." << endl;
-    cout << "Press 2 to go back to menu." << endl;
+    cout << "Press 1 to continue resetting your password." << endl;
+    cout << "Press 2 to go back to the login menu." << endl;
     cout << "\nEnter choice: ";
     cin >> forgotChoice;
 
@@ -164,7 +165,7 @@ void login::ForgotPassword() {
         string user, userSecurity, forgotId, forgotPass, forgotSecurity;
         int newHashPassword, forgotSecHash;
         system("clear");
-        cout << "\nEnter USERNAME: ";
+        cout << "\nEnter Username: ";
         cin >> user;
         cout << "\nAnswer your security question: What was your favorite childhood movie?: ";
         cin.ignore();
@@ -199,37 +200,32 @@ void login::ForgotPassword() {
         if (userFound) {
             cout << "Password reset successful!" << endl;
             this_thread::sleep_for(chrono::seconds(5));
-            Login(); // Call Login() after password reset
+            Login();
         } else {
             cout << "Username or security answer is incorrect." << endl;
         }
     }
 }
 
-void login::DeleteLine(string userDelete) {
-    string line;
-    ifstream myFile;
-    myFile.open(dataFilePath);
-    ofstream temp;
-    temp.open("temp.txt");
-    while (getline(myFile, line))
-    {
-        if (line.substr(0, userDelete.size()) != userDelete)
-        {
-            temp << line << endl;
-        }
-    }
-    myFile.close();
-    temp.close();
-    remove(dataFilePath.c_str());
-    rename("temp.txt", dataFilePath.c_str());
-}
-
 void runUserLogin() {
     system("clear");
+
+    // Autocreate data.txt if it doesn't exist
+    ifstream file(dataFilePath);
+    if (!file) {
+        ofstream outfile(dataFilePath);
+        if (outfile) {
+            cout << "Data.txt created.\n" << endl;
+        } else {
+            cerr << "Error: Unable to create data.txt." << endl;
+            return;
+        }
+    }
+
     login userLogin;
     int choice;
-    cout << "1. Login\n2. Register\n3. Forgot Password\nEnter your choice: ";
+    cout << "1. Login\n2. Register\n3. Forgot Password" << endl;
+    cout << "\nEnter your choice: ";
     cin >> choice;
     if (choice == 1) {
         userLogin.Login();

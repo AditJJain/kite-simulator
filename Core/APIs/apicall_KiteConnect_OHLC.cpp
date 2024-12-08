@@ -52,6 +52,7 @@ void viewMarketData(const string& username) {
 
         system(openCommand.c_str());
         setNonBlockingMode(false);
+        system("clear");
         return;
     }
 

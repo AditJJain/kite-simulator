@@ -1,17 +1,16 @@
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <vector>
 #include <algorithm>    // For find
 #include <cctype>       // For toupper
-#include <iomanip>      // For formatting output
-#include <cstdio>       // For popen()
-#include <memory>       // For managing dynamic allocations
-#include <thread>       // For sleep
 #include <chrono>       // For time
-#include <termios.h>    // For non-blocking input
-#include <unistd.h>     // For read
+#include <fstream>
+#include <iomanip>      // For formatting output
+#include <iostream>
+#include <string>
+#include <sstream>
 #include <sys/select.h> // For select
+#include <termios.h>    // For non-blocking input
+#include <thread>       // For sleep
+#include <unistd.h>     // For read
+#include <vector>
 #include "Core/APIs/apicall_KiteConnect_LTP.h"
 using namespace std;
 
@@ -88,11 +87,6 @@ void saveWatchlist(const string& username, const vector<string>& watchlist) {
 }
 
 void displayWatchlist(const vector<string>& watchlist) {
-    if (watchlist.empty()) {
-        cout << "Your watchlist is currently empty." << endl;
-        return;
-    }
-
     setTerminalMode();
 
     // Initial display
@@ -170,12 +164,40 @@ void displayWatchlist(const vector<string>& watchlist) {
     }
 }
 
+bool isValid(const string& symbol) {
+    const string filename = "Core/APIs/KiteConnect_filteredInstruments.csv";
+
+    ifstream file(filename);
+
+    string line, tsymbol, lotSizeStr;
+    getline(file, line); // Skip the header line
+
+    while (getline(file, line)) {
+        stringstream ss(line);
+        string token;
+
+        // Parse fields: instrument_token, trading_symbol, lot_size
+        getline(ss, token, ','); // Skip instrument_token
+        getline(ss, tsymbol, ','); // Get trading_symbol
+        if (tsymbol == symbol) {
+            return true;
+        }
+        getline(ss, lotSizeStr, ','); // Get lot_size
+    }
+    return false;
+}
+
 void addStock(vector<string>& watchlist) {
     string symbol;
     cout << "Enter the instrument symbol to add: ";
     getline(cin, symbol);
-
     symbol = toUpperCase(symbol);
+
+    if(!isValid(symbol)){
+        cout << "Invalid symbol" << endl;
+        this_thread::sleep_for(std::chrono::seconds(5));
+        return;
+    }
 
     if (symbol.empty()) {
         cout << "Instrument symbol cannot be empty." << endl;
@@ -233,8 +255,15 @@ void runWatchlist(const string& username) {
 
         switch (toupper(choice)) {
             case '1':
-                displayWatchlist(watchlist);
-                break;
+                if (watchlist.empty()) {
+                    cout << "Your watchlist is currently empty." << endl;
+                    this_thread::sleep_for(chrono::seconds(3));
+                    system("clear");
+                    break;
+                } else {
+                    displayWatchlist(watchlist);
+                    break;
+                }
             case '2':
                 addStock(watchlist);
                 saveWatchlist(username, watchlist);
@@ -247,7 +276,7 @@ void runWatchlist(const string& username) {
                 system("clear");
                 break;
             default:
-                cout << "Invalid choice. Please enter a number between 1 and 4." << endl;
+                cout << "Invalid choice. Please enter a number between 1-3 or Q." << endl;
                 this_thread::sleep_for(chrono::seconds(3));
                 system("clear");
         }
